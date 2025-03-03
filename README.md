@@ -41,7 +41,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 
 --------------------------------------------------------------------------------------------------------------
 #CPU Vanity Address and Jigsaw Puzzle Instances
-
+```
 ./VanitySearch -stop -t 4 -bits 28 -r 5000 -level 4 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
  
 OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
@@ -98,11 +98,13 @@ Base Key: Randomly changed every 81689 Mkeys
 
 ^C116.10 Mkey/s][GPU 2116.10 Mkey/s][Total 2^39.07][Prob 47.7%][50% in 00:00:18][Found 2]
 
-
+```
 
 
 ---------------------------------------------------------------------------------------------------------------------
 #GPU Vanity Address and Jigsaw Puzzle Instances
+
+```
 ./VanitySearch -stop -t 0 -gpu -bits 38 -r 50000 -level 4 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
  
 OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
@@ -148,6 +150,7 @@ Bit 256 GPU Base Key 69631: A0D78D4B7874537F34578A864E28B040D860255575926F48D4B6
   Check:1Great3ZB78x244SJ25Y6TZS85tfN6QsPm
 
 !!! Result.txt Found key: FA3E108197F87188257B2CB9FB24FEEEF4E2C3E45EB3F08CE36579BF8FD93ED6 
+```
 ------------------------------------------------------------------------------------------------------------------
 Random Bitcoin Puzzle #68 Private Keys
 Start key 0000000000000000000000000000000000000000000000080000000000000000 
@@ -326,4 +329,4 @@ If this project has been helpful to you, please consider sponsoring. It is the g
 - **ETH**: 0xD6503e5994bF46052338a9286Bc43bC1c3811Fa1
 - **DOGE**: DTszb9cPALbG9ESNJMFJt4ECqWGRCgucky
 - **TRX**: TAHUmjyzg7B3Nndv264zWYUhQ9HUmX4Xu4
-
+  
