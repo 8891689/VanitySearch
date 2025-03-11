@@ -24,10 +24,22 @@
 #define ECCTYPE "secp256k1"
 //
 
+// 添加这三行
+#include <array>
+#include <memory>
+#include <stdexcept>
+
 using namespace std;
 
 Point Gn[CPU_GRP_SIZE / 2];
 Point _2Gn;
+
+#ifndef WIN64
+namespace {
+    bool printed_version = false;
+}
+#endif
+
 
 // ----------------------------------------------------------------------------
 
@@ -81,22 +93,30 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
 	//myecc = EC_KEY_new_by_curve_name(OBJ_txt2nid(ECCTYPE));
 
 	// Logo 2
-#ifdef WIN64
-	if (all_algorithms_fl) {
-	}
-	if (screen_fl) {
-	RAND_screen();
-	}
-#else
+#ifndef WIN64
+if (!printed_version) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("openssl version -v", "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
 
-	if (1) {
-	bool cmd_v = system("openssl version -v");//bool cmd_v = system("openssl version -a");
-	}
-	if (all_algorithms_fl) {
-	}
-  #endif
-        printf(" \n");
-        printf("[OpenSSL level %d]\n", FunctionLevel);
+    if (!result.empty()) {
+        printf("\n[🟑 ]%s", result.c_str());
+    }
+
+    printed_version = true;
+}
+#endif
+
+
+
+        
+        printf("[🟑 ]OpenSSL level %d\n", FunctionLevel);
 	// Seed random number generator with performance counter
 	if (start_seed_fl) {
              RandAddSeed();
@@ -264,17 +284,17 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
     if (nbPrefix == 1) {
       if (!caseSensitive) {
         // Case unsensitive search
-        printf("Difficulty: %.0f\n", _difficulty);
+        printf("[🟑 ]Difficulty: %.0f\n", _difficulty);
         printf("Search: %s [%s, Case unsensitive] (Lookup size %d)\n", inputPrefixes[0].c_str(), seachInfo.c_str(), unique_sPrefix);
       } else {
-        printf("Difficulty: %.0f\n", _difficulty);
-        printf("Search: %s [%s]\n", inputPrefixes[0].c_str(), seachInfo.c_str());
+        printf("[🟑 ]Difficulty: %.0f\n", _difficulty);
+        printf("[🟑 ]Search: %s [%s]\n", inputPrefixes[0].c_str(), seachInfo.c_str());
       }
     } else {
       if (onlyFull) {
-        printf("Search: %d addresses (Lookup size %d,[%d,%d]) [%s]\n", nbPrefix, unique_sPrefix, minI, maxI, seachInfo.c_str());
+        printf("[🟑 ]Search: %d addresses (Lookup size %d,[%d,%d]) [%s]\n", nbPrefix, unique_sPrefix, minI, maxI, seachInfo.c_str());
       } else {
-        printf("Search: %d prefixes (Lookup size %d) [%s]\n", nbPrefix, unique_sPrefix, seachInfo.c_str());
+        printf("[🟑 ]Search: %d prefixes (Lookup size %d) [%s]\n", nbPrefix, unique_sPrefix, seachInfo.c_str());
       }
     }
 
@@ -375,12 +395,12 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
   char *ctimeBuff;
   time_t now = time(NULL);
   ctimeBuff = ctime(&now);
-  printf("Start %s", ctimeBuff);
+  printf("[🟑 ]Start %s", ctimeBuff);
 
   if (rekey > 0) {
-    printf("Base Key: Randomly changed every %.0f Mkeys\n",(double)rekey);
+    printf("[🟑 ]Base Key: Randomly changed every %.0f Mkeys\n",(double)rekey);
   } else {
-    printf("Base Key: %s\n", startKey.GetBase16().c_str());
+    printf("[🟑 ]Base Key: %s\n", startKey.GetBase16().c_str());
   }
 
 }
@@ -743,7 +763,7 @@ void VanitySearch::output(string addr,string pAddr,string pAddrHex) {
   FILE *f = stdout;
   bool needToClose = false;
 
-  outputFile = "Result.txt";// Fix name
+  outputFile = "Found.txt";// Fix name
 
   if (outputFile.length() > 0) {
     f = fopen(outputFile.c_str(), "a+");//f = fopen(outputFile.c_str(), "a");
@@ -873,16 +893,10 @@ bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomor
     output(chkAddr, secp->GetPrivAddress(mode ,k), k.GetBase16()); // **使用 chkAddr 替代 addr，写入完整地址**
     // Timer::SleepMillis(1000); // 移除不必要的延迟
     // Timer::SleepMillis(500);  // 移除不必要的延迟
-    printf("\n\n");
     //printf("  Addr :%s\n", addr.c_str());
-    printf("  Check:%s\n", chkAddr.c_str());
     printf("\n");
-    //printf("!!! Result.txt Found key: %s \n", k.GetBase16().c_str());
-    //printf("!!! Result.txt Found key: %s \n", k.GetBase16().c_str());
-    //printf("!!! Result.txt Found key: %s \n", k.GetBase16().c_str());
-    //printf("!!! Result.txt Found key: %s \n", k.GetBase16().c_str());
-    printf("!!! Result.txt Found key: %s \n", k.GetBase16().c_str());
-    printf("\n");
+    printf("[🟐 ]Add:%s\n", chkAddr.c_str());
+    printf("[🟐 ]Key:%s \n", k.GetBase16().c_str());
 	  return true; // 仍然保持 return true;  表示 checkPrivKey 函数执行完成
   }
 
@@ -1287,7 +1301,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
 
 		//printf("\nBit %d Base Key thId %d: %s < %s or > %s Rekey true \n", Random_bits, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
 		Key_bits_length = key.GetBitLength();
-		printf("Bit %d Base Key thId %d: %s < %s or > %s Rekey true \r", Key_bits_length, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
+		printf("[🟑 ]Bit %d Base Key thId %d: %s < %s or > %s Rekey true \r", Key_bits_length, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
 		//
 		key.Rand(Random_bits);// bit 66
 		//
@@ -1304,7 +1318,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
 	//printf("\nBit %d CPU Base Key thId %d: %s\n", Random_bits, thId, key.GetBase16().c_str());
 	Key_bits_length = key.GetBitLength();
 	if (Key_bits_length != Random_bits) goto NewRandom;// check
-	printf("Bit %d CPU Base Key thId %d: %s\r", Key_bits_length, thId, key.GetBase16().c_str());
+	printf("[🟑 ]Bit %d CPU Base Key thId %d: %s\r", Key_bits_length, thId, key.GetBase16().c_str());
   } else {
     key.Set(&startKey);
     Int off((int64_t)thId);
@@ -1314,7 +1328,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
 	off.ShiftL((uint32_t)(nbBit - 8));
 	//
 	key.Add(&off);
-	printf("CPU Base Key thId %d: %s\r", thId, key.GetBase16().c_str());
+	printf("[🟑 ]CPU Base Key thId %d: %s\r", thId, key.GetBase16().c_str());
   }
   Int km(&key);
   km.Add((uint64_t)CPU_GRP_SIZE / 2);
@@ -1595,7 +1609,7 @@ void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int
 	  //if (i < 10 || i > nbThread - 10) { printf("Bit %d GPU Base Key %d: %s\n", Random_bits, i, keys[i].GetBase16().c_str()); }
 	  Key_bits_length = keys[i].GetBitLength();
 	  if (Key_bits_length != Random_bits) goto NewRandom;// check
-	  if (i < 10 || i > nbThread - 10) { printf("Bit %d GPU Base Key %d: %s\r", Key_bits_length, i, keys[i].GetBase16().c_str()); }
+	  if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU Base Key %d: %s\r", Key_bits_length, i, keys[i].GetBase16().c_str()); }
 	  //
     } else {
       //
@@ -1611,7 +1625,7 @@ void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int
 	  //
       keys[i].Add(&offT);
       keys[i].Add(&offG);
-	  if (i < 10 || i > nbThread - 10) { printf("Bit %d GPU startKey Base Key %d: %s\r", Random_bits, i, keys[i].GetBase16().c_str()); }
+	  if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU startKey Base Key %d: %s\r", Random_bits, i, keys[i].GetBase16().c_str()); }
 	  //
     }
     //Int k(keys + i);
@@ -1641,7 +1655,7 @@ void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
   Int *keys = new Int[nbThread];
   vector<ITEM> found;
 
-  printf("GPU: %s\r",g.deviceName.c_str());
+  printf("[🟑 ]GPU: %s\r",g.deviceName.c_str());
 
   counters[thId] = 0;
 
@@ -1775,7 +1789,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
 
   memset(counters,0,sizeof(counters));
 
-  printf("Number of CPU thread: %d\r", nbCPUThread);
+  printf("[🟑 ]Number of CPU thread: %d\r", nbCPUThread);
 
   TH_PARAM *params = (TH_PARAM *)malloc((nbCPUThread + nbGPUThread) * sizeof(TH_PARAM));
   memset(params,0,(nbCPUThread + nbGPUThread) * sizeof(TH_PARAM));
@@ -1872,7 +1886,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
     avgGpuKeyRate /= (double)(nbSample);
 
     if (isAlive(params)) {
-      printf("[%.2f Mkey/s][GPU %.2f Mkey/s][Total 2^%.2f]%s[Found %d]\r",
+      printf("[🟑 ][%.2f Mkey/s][GPU %.2f Mkey/s][Total 2^%.2f]%s[Found %d]\r",
         avgKeyRate / 1000000.0, avgGpuKeyRate / 1000000.0,
           log2((double)count), GetExpectedTime(avgKeyRate, (double)count).c_str(),nbFoundKey);
     }
