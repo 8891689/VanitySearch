@@ -97,7 +97,7 @@ void getInts(string name,vector<int> &tokens, const string &text, char sep) {
 
   } catch(std::invalid_argument &) {
 
-    printf("Invalid %s argument, number expected\n",name.c_str());
+    printf("[🟑 ]Invalid %s argument, number expected\n",name.c_str());
     exit(-1);
 
   }
@@ -384,7 +384,7 @@ int main(int argc, char* argv[]) {
   int rand_bit = 66;// Random Bit 66
   int FuncLevel = 1;// OpenSLL functions case 0-4
   vector<string> prefix;
-  string outputFile = "Result.txt";
+  string outputFile = "Found.txt";
   int nbCPUThread = Timer::getCoreNumber();
   bool tSpecified = false;
   bool sse = false;//bool sse = true;
@@ -564,8 +564,7 @@ int main(int argc, char* argv[]) {
 
   //printf("VanitySearch v" RELEASE "\n");
   // Logo 1
-  printf(" \n");
-  printf("argv Add to[-start] [-bits]Cancel SSE");
+  printf("[🟑 ]argv Add to -start -bits Cancel SSE");
   
     if(gridSize.size()==0) {
     for (int i = 0; i < gpuId.size(); i++) {
