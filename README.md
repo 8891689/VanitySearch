@@ -43,60 +43,64 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 #CPU Vanity Address and Jigsaw Puzzle Instances
 ```
 ./VanitySearch -stop -t 4 -bits 28 -r 5000 -level 4 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
- 
-OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-argv Add to[-start] [-bits]Cancel SSE 
-[OpenSSL level 4]
-Difficulty: 146150163733090291820368483271628301965593254297651899 
-Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
-Start Mon Mar  3 08:38:34 2025
-Base Key: Randomly changed every 5000 Mkeys
-[1.81 Mkey/s][GPU 0.00 Mkey/s][Total 2^25.00][Prob 0.0%][50% in 1.77879e+34y][Found 0]
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 14615016373309029182036848327162830196559325429765 
+[🟑 ]Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
+[🟑 ]Start Tue Mar 11 23:09:28 2025
+[🟑 ]Base Key: Randomly changed every 5000 Mkeys
+[🟑 ][2.01 Mkey/s][GPU 0.00 Mkey/s][Total 2^26.47][Prob 0.0%][50% in 1.60006e+34y][Found 0]
 Warning, wrong private key generated !
+--------------------------------------
   Addr :12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
-  Check:12jbtzBb54r97TCwW3G1gCFoumpcmX5gH2
-  Endo:0 incr:408 comp:1
+  Check:12jbtzBb54r97TCwW3G1gCFoumpckPwHQB
+                                      ----
+                                     
+  Endo:0 incr:764 comp:1
+
+./VanitySearch -stop -t 4 -bits 28 -r 5000 -level 4 12jbtzBb54r97TCwW3G1gCFoumpc
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 16488881849912688540611749476993863811643683635237 
+[🟑 ]Search: 12jbtzBb54r97TCwW3G1gCFoumpc [Compressed]
+[🟑 ]Start Tue Mar 11 23:18:08 2025
+[🟑 ]Base Key: Randomly changed every 5000 Mkeys
+[🟑 ][2.06 Mkey/s][GPU 0.00 Mkey/s][Total 2^27.54][Prob 0.0%][50% in 1.76175e+33y][Found 0]
+[🟐 ]Add:12jbtzBb54r97TCwW3G1gCFoumpcnwKAB1
+[🟐 ]Key:D916CE8 
+
+
 
 ./VanitySearch -stop -t 1 -bits 256 -r 500 -level 4 1btc
- 
-OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-argv Add to[-start] [-bits]Cancel SSE 
-[OpenSSL level 4]
-Difficulty: 4553521 with CPU performance counter: 1740962636499159 
-Search: 1btc [Compressed]
-Start Mon Mar  3 08:43:56 2025
-Base Key: Randomly changed every 500 Mkeys
-[0.50 Mkey/s][GPU 0.00 Mkey/s][Total 2^22.74][Prob 78.4%][80% in 00:00:00][Found 0]EA38CBF60E
-
-  Check:1btcUQyhULzuKzVxjERasEvXHEw9GenjJ
-
-!!! Result.txt Found key: B8302B348CF3DA57BF4FC6DD9916DC051AC3018FAAB4952A673ECBEA393D7DA3 
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 4553521h CPU performance counter: 1741705730452576 
+[🟑 ]Search: 1btc [Compressed]
+[🟑 ]Start Tue Mar 11 23:08:50 2025
+[🟑 ]Base Key: Randomly changed every 500 Mkeys
+[🟑 ][0.59 Mkey/s][GPU 0.00 Mkey/s][Total 2^21.17][Prob 40.5%][50% in 00:00:01][Found 0]6FE4E78201
+[🟐 ]Add:1btchoWYz1rUcyaVJ7jRXtFkYR3mVW3t9
+[🟐 ]Key:B3222DC7153137B572EFF9FD5DD913A17F3078E1BDF5DA6B2CC8336FE514C334 
 
 
 ----------------------------------------------------------------------------------------------------------------
 
-./VanitySearch -t 0 -gpu -bits 68 -r 81689 -level 4 1MVDYgVa
- 
-OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-argv Add to[-start] [-bits]Cancel SSE 
-[OpenSSL level 4]
-Difficulty: 888446610539 CPU performance counter: 1740964004863194 
-Search: 1MVDYgVa [Compressed]
-Start Mon Mar  3 09:06:44 2025
-Base Key: Randomly changed every 81689 Mkeys
-[1889.25 Mkey/s][GPU 1889.25 Mkey/s][Total 2^37.52][Prob 19.9%][50% in 00:03:41][Found 0]
+./VanitySearch -t 0 -gpu -gpuId 0 -bits 68 -r 66669 -level 4 1MVDYgVa
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 888446610539 performance counter: 1741705479332546 
+[🟑 ]Search: 1MVDYgVa [Compressed]
+[🟑 ]Start Tue Mar 11 23:04:39 2025
+[🟑 ]Base Key: Randomly changed every 66669 Mkeys
+[🟑 ][1898.16 Mkey/s][GPU 1898.16 Mkey/s][Total 2^37.29][Prob 17.2%][50% in 00:03:56][Found 0]
+[🟐 ]Add:1MVDYgVaF1odmFCZR5vDQANhZBfQcNzh6b
+[🟐 ]Key:C26C00BAAD6516E8D 
+^C ][1915.98 Mkey/s][GPU 1915.98 Mkey/s][Total 2^38.40][Prob 33.5%][50% in 00:02:12][Found 1]
 
-  Check:1MVDYgVaUExtxfQE8u1HjZsaxFCDbuMyjZ
-
-!!! Result.txt Found key: 903E84386E11BBD36 
-
-[1880.26 Mkey/s][GPU 1880.26 Mkey/s][Total 2^38.40][Prob 33.6%][50% in 00:02:14][Found 1]
-
-  Check:1MVDYgVaUEGCPPFaA7k47u71FtzjWTwNUh
-
-!!! Result.txt Found key: EA8EFA548C0A75B15 
-
-^C116.10 Mkey/s][GPU 2116.10 Mkey/s][Total 2^39.07][Prob 47.7%][50% in 00:00:18][Found 2]
 
 ```
 
@@ -105,51 +109,45 @@ Base Key: Randomly changed every 81689 Mkeys
 #GPU Vanity Address and Jigsaw Puzzle Instances
 
 ```
-./VanitySearch -stop -t 0 -gpu -bits 38 -r 50000 -level 4 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
- 
-OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-argv Add to[-start] [-bits]Cancel SSE 
-[OpenSSL level 4]
-Difficulty: 146150163733090291820368483271628301965593254297678069 
-Search: 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2 [Compressed]
-Start Mon Mar  3 08:31:36 2025
-Base Key: Randomly changed every 50000 Mkeys
-[2231.46 Mkey/s][GPU 2231.46 Mkey/s][Total 2^34.38][Prob 0.0%][50% in 1.43956e+31y][Found 0]
-Warning, wrong private key generated !
-  Addr :1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
-  Check:1HBtApAFA9B2YZw3G2YKSMCtb3dVkGnF4k
-  Endo:0 incr:265 comp:1
+./VanitySearch -stop -t 0 -gpu -bits 38 -r 50000 -level 4 1HBtApAFA9B2YZw3G2YKSMCtb3dV
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 16488881849912688540611749476993863811643683635295 
+[🟑 ]Search: 1HBtApAFA9B2YZw3G2YKSMCtb3dV [Compressed]
+[🟑 ]Start Tue Mar 11 23:15:22 2025
+[🟑 ]Base Key: Randomly changed every 50000 Mkeys
+[🟑 ][2156.59 Mkey/s][GPU 2156.59 Mkey/s][Total 2^34.01][Prob 0.0%][50% in 1.68051e+30y][Found 0]
+[🟐 ]Add:1HBtApAFA9B2YZw3G2YKSMCtb3dVnxYURY
+[🟐 ]Key:22382FACD0 
 
 
-./VanitySearch -stop -t 0 -gpu -bits 37 -r 100000 -level 4 14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
- 
-OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-argv Add to[-start] [-bits]Cancel SSE 
-[OpenSSL level 4]
-Difficulty: 146150163733090291820368483271628301965593254297696741 
-Search: 14iXhn8bGajVWegZHJ18vJLHhntcpL4dex [Compressed]
-Start Mon Mar  3 08:32:52 2025
-Base Key: Randomly changed every 100000 Mkeys
-[2352.67 Mkey/s][GPU 2352.67 Mkey/s][Total 2^33.13][Prob 0.0%][50% in 1.36539e+31y][Found 0]
-Warning, wrong private key generated !
-  Addr :14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
-  Check:14iXhn8bGajVWegZHJ18vJLHhntcnoS8tQ
-  Endo:0 incr:483 comp:1
+
+
+./VanitySearch -stop -t 0 -gpu -bits 37 -r 100000 -level 4 14iXhn8bGajVWegZHJ18vJLHhntc
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 16488881849912688540611749476993863811643683635237 
+[🟑 ]Search: 14iXhn8bGajVWegZHJ18vJLHhntc [Compressed]
+[🟑 ]Start Tue Mar 11 23:13:02 2025
+[🟑 ]Base Key: Randomly changed every 100000 Mkeys
+[🟑 ][2125.38 Mkey/s][GPU 2125.38 Mkey/s][Total 2^36.09][Prob 0.0%][50% in 1.70519e+30y][Found 0]
+[🟐 ]Add:14iXhn8bGajVWegZHJ18vJLHhntcqHAAbv
+[🟐 ]Key:1757756A93 
 
 ./VanitySearch -stop -t 0 -gpu -bits 256 -r 500000 -level 4 1Great
+[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
+[🟑 ]OpenSSL level 4
+[🟑 ]Difficulty: 264104224CPU performance counter: 1741706049529381 
+[🟑 ]Search: 1Great [Compressed]
+[🟑 ]Start Tue Mar 11 23:14:09 2025
+[🟑 ]Base Key: Randomly changed every 500000 Mkeys
+[🟑 ]Bit 256 GPU Base Key 69631: 875BAD5FE9BB77E586CE193DC23723966FF39A2A2FC10BCEB927C1A7E61B8786
+[🟐 ]Add:1Greatvd3hMFnc26YeDUKexaoMBLt9aUY8
+[🟐 ]Key:CF05BAF34C44BA759F5C7A56FDAE32928425D41F6D8CCAEEDC502E56A02541E0
  
-OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-argv Add to[-start] [-bits]Cancel SSE 
-[OpenSSL level 4]
-Difficulty: 264104224ith CPU performance counter: 1740962534943094 
-Search: 1Great [Compressed]
-Start Mon Mar  3 08:42:14 2025
-Base Key: Randomly changed every 500000 Mkeys
-Bit 256 GPU Base Key 69631: A0D78D4B7874537F34578A864E28B040D860255575926F48D4B666591D760E38
-
-  Check:1Great3ZB78x244SJ25Y6TZS85tfN6QsPm
-
-!!! Result.txt Found key: FA3E108197F87188257B2CB9FB24FEEEF4E2C3E45EB3F08CE36579BF8FD93ED6 
 ```
 ------------------------------------------------------------------------------------------------------------------
 Random Bitcoin Puzzle #68 Private Keys
@@ -159,6 +157,7 @@ Stop key 00000000000000000000000000000000000000000000000fffffffffffffffff
 P2PKH(c) 1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ
 
 
+```
 Shāng (wèi):68 Zǒng jiàn shù:295147905179352825856 Sōusuǒ sùdù:2123 Měi miǎo M jiàn shù (10^6) tiān:1609073.819 Xīngqí:229867.688 Yuè:52791.136 Nián:4405.404
 108 / 5,000
 Entropy (bits): 68
@@ -168,7 +167,7 @@ Day: 1609073.819
 Week: 229867.688
 Month: 52791.136
 Year: 4405.404
-
+```
 ----------------------------------------------------------------------------------------------------------------
 Check Bits: 28 \
 Compressed Address: \
