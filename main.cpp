@@ -564,7 +564,7 @@ int main(int argc, char* argv[]) {
 
   //printf("VanitySearch v" RELEASE "\n");
   // Logo 1
-  printf("[🟑 ]argv Add to -start -bits Cancel SSE");
+  printf("[🟑 ]Argv add to -start -bits Cancel SSE");
   
     if(gridSize.size()==0) {
     for (int i = 0; i < gpuId.size(); i++) {
