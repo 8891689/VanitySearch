@@ -86,7 +86,7 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
 	//myecc = EC_KEY_new_by_curve_name(OBJ_txt2nid(ECCTYPE));
 
 	// Logo 2
-#ifndef WIN64
+/*#ifndef WIN64
     // 使用 popen 捕获 openssl version -v 的输出
     std::array<char, 128> buffer;
     std::string result;
@@ -105,7 +105,7 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
        
     }
 #endif
-        
+*/       
         printf("[🟑 ]OpenSSL level %d\n", FunctionLevel);
 	// Seed random number generator with performance counter
 	if (start_seed_fl) {
@@ -1878,7 +1878,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
     avgGpuKeyRate /= (double)(nbSample);
 
     if (isAlive(params)) {
-      printf("[🟑 ][%.2f Mkey/s][GPU %.2f Mkey/s][Total 2^%.2f]%s[Found %d]\r",
+      printf("[🟑 ][Ts %.2f Mkey/s][GPU %.2f Mkey/s][Total 2^%.2f]%s[Found %d]\r",
         avgKeyRate / 1000000.0, avgGpuKeyRate / 1000000.0,
           log2((double)count), GetExpectedTime(avgKeyRate, (double)count).c_str(),nbFoundKey);
     }
