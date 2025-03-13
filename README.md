@@ -70,8 +70,6 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟐 ]Key:D916CE8 
 
 
-
-
 ./VanitySearch -stop -t 1 -bits 256 -r 500 -level 4 1btc
 [🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
@@ -85,8 +83,6 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟐 ]Add:1btcTx6Mf6afwvZfLLFF4Sayx7bxuuF65
 [🟐 ]Key:C071987238FBF331D36593891B3AEAC8D1D414B0E1A8AC10F68DC23DFD0B4C84 
 ```
-
-
 ---------------------------------------------------------------------------------------------------------------------
 #GPU Vanity Address and Jigsaw Puzzle Instances
 
@@ -117,8 +113,6 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟑 ]GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
 [🟐 ]Add:14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
 [🟐 ]Key:1757756A93 
-
-
 
 ./VanitySearch -t 0 -gpu -bits 256 -r 50000 -level 4 1Great
 [🟑 ]Argv add to -start -bits Cancel SSE 
