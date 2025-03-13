@@ -43,110 +43,153 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 #CPU Vanity Address and Jigsaw Puzzle Instances
 ```
 ./VanitySearch -stop -t 4 -bits 28 -r 5000 -level 4 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
-[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
 [🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 14615016373309029182036848327162830196559325429765 
+[🟑 ]Difficulty: 1461501637330902918203684832716283019655932542976
 [🟑 ]Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
-[🟑 ]Start Tue Mar 11 23:09:28 2025
+[🟑 ]Start Thu Mar 13 11:01:41 2025
 [🟑 ]Base Key: Randomly changed every 5000 Mkeys
-[🟑 ][2.01 Mkey/s][GPU 0.00 Mkey/s][Total 2^26.47][Prob 0.0%][50% in 1.60006e+34y][Found 0]
-Warning, wrong private key generated !
---------------------------------------
-  Addr :12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
-  Check:12jbtzBb54r97TCwW3G1gCFoumpckPwHQB
-                                      ----
-                                     
-  Endo:0 incr:764 comp:1
+[🟑 ]Number of CPU thread: 4
+[🟑 ][3.45 Mkey/s][GPU 0.00 Mkey/s][Total 2^27.13][Prob 0.0%][50% in 9.31803e+33y][Found 0]
+[🟐 ]Add:12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+[🟐 ]Key:D916CE8 
+
 
 ./VanitySearch -stop -t 4 -bits 28 -r 5000 -level 4 12jbtzBb54r97TCwW3G1gCFoumpc
-[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
 [🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 16488881849912688540611749476993863811643683635237 
+[🟑 ]Difficulty: 164888818499126885406117494769938638116436836352
 [🟑 ]Search: 12jbtzBb54r97TCwW3G1gCFoumpc [Compressed]
-[🟑 ]Start Tue Mar 11 23:18:08 2025
+[🟑 ]Start Thu Mar 13 11:02:56 2025
 [🟑 ]Base Key: Randomly changed every 5000 Mkeys
-[🟑 ][2.06 Mkey/s][GPU 0.00 Mkey/s][Total 2^27.54][Prob 0.0%][50% in 1.76175e+33y][Found 0]
-[🟐 ]Add:12jbtzBb54r97TCwW3G1gCFoumpcnwKAB1
+[🟑 ]Number of CPU thread: 4
+[🟑 ][3.44 Mkey/s][GPU 0.00 Mkey/s][Total 2^26.33][Prob 0.0%][50% in 1.05281e+33y][Found 0]
+[🟐 ]Add:12jbtzBb54r97TCwW3G1gCFoumpcoyKkDN
 [🟐 ]Key:D916CE8 
 
 
 
+
 ./VanitySearch -stop -t 1 -bits 256 -r 500 -level 4 1btc
-[🟑 ]argv Add to -start -bits Cancel SSE
+[🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
 [🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 4553521h CPU performance counter: 1741705730452576 
+[🟑 ]Difficulty: 4553521
 [🟑 ]Search: 1btc [Compressed]
-[🟑 ]Start Tue Mar 11 23:08:50 2025
+[🟑 ]Start Thu Mar 13 11:03:52 2025
 [🟑 ]Base Key: Randomly changed every 500 Mkeys
-[🟑 ][0.59 Mkey/s][GPU 0.00 Mkey/s][Total 2^21.17][Prob 40.5%][50% in 00:00:01][Found 0]6FE4E78201
-[🟐 ]Add:1btchoWYz1rUcyaVJ7jRXtFkYR3mVW3t9
-[🟐 ]Key:B3222DC7153137B572EFF9FD5DD913A17F3078E1BDF5DA6B2CC8336FE514C334 
+[🟑 ]Number of CPU thread: 1
+[🟑 ][0.90 Mkey/s][GPU 0.00 Mkey/s][Total 2^23.11][Prob 86.2%][90% in 00:00:01][Found 0]
+[🟐 ]Add:1btcTx6Mf6afwvZfLLFF4Sayx7bxuuF65
+[🟐 ]Key:C071987238FBF331D36593891B3AEAC8D1D414B0E1A8AC10F68DC23DFD0B4C84 
 
-
-----------------------------------------------------------------------------------------------------------------
-
-./VanitySearch -t 0 -gpu -gpuId 0 -bits 68 -r 66669 -level 4 1MVDYgVa
-[🟑 ]argv Add to -start -bits Cancel SSE
-[🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
-[🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 888446610539 performance counter: 1741705479332546 
-[🟑 ]Search: 1MVDYgVa [Compressed]
-[🟑 ]Start Tue Mar 11 23:04:39 2025
-[🟑 ]Base Key: Randomly changed every 66669 Mkeys
-[🟑 ][1898.16 Mkey/s][GPU 1898.16 Mkey/s][Total 2^37.29][Prob 17.2%][50% in 00:03:56][Found 0]
-[🟐 ]Add:1MVDYgVaF1odmFCZR5vDQANhZBfQcNzh6b
-[🟐 ]Key:C26C00BAAD6516E8D 
-^C ][1915.98 Mkey/s][GPU 1915.98 Mkey/s][Total 2^38.40][Prob 33.5%][50% in 00:02:12][Found 1]
-
-
-```
 
 
 ---------------------------------------------------------------------------------------------------------------------
 #GPU Vanity Address and Jigsaw Puzzle Instances
 
 ```
-./VanitySearch -stop -t 0 -gpu -bits 38 -r 50000 -level 4 1HBtApAFA9B2YZw3G2YKSMCtb3dV
-[🟑 ]argv Add to -start -bits Cancel SSE
+./VanitySearch -stop -t 0 -gpu -bits 38 -r 50000 -level 4 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
+[🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
 [🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 16488881849912688540611749476993863811643683635295 
-[🟑 ]Search: 1HBtApAFA9B2YZw3G2YKSMCtb3dV [Compressed]
-[🟑 ]Start Tue Mar 11 23:15:22 2025
+[🟑 ]Difficulty: 1461501637330902918203684832716283019655932542976
+[🟑 ]Search: 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2 [Compressed]
+[🟑 ]Start Thu Mar 13 11:18:31 2025
 [🟑 ]Base Key: Randomly changed every 50000 Mkeys
-[🟑 ][2156.59 Mkey/s][GPU 2156.59 Mkey/s][Total 2^34.01][Prob 0.0%][50% in 1.68051e+30y][Found 0]
-[🟐 ]Add:1HBtApAFA9B2YZw3G2YKSMCtb3dVnxYURY
+[🟑 ]Number of CPU thread: 0
+[🟑 ]GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
+[🟑 ][2138.80 Mkey/s][GPU 2138.80 Mkey/s][Total 2^35.34][Prob 0.0%][50% in 1.50192e+31y][Found 0]
+[🟐 ]Add:1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
 [🟐 ]Key:22382FACD0 
 
 
-
-
-./VanitySearch -stop -t 0 -gpu -bits 37 -r 100000 -level 4 14iXhn8bGajVWegZHJ18vJLHhntc
-[🟑 ]argv Add to -start -bits Cancel SSE
+./VanitySearch -stop -t 0 -gpu -bits 37 -r 100 -level 4 14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
+[🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
 [🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 16488881849912688540611749476993863811643683635237 
-[🟑 ]Search: 14iXhn8bGajVWegZHJ18vJLHhntc [Compressed]
-[🟑 ]Start Tue Mar 11 23:13:02 2025
-[🟑 ]Base Key: Randomly changed every 100000 Mkeys
-[🟑 ][2125.38 Mkey/s][GPU 2125.38 Mkey/s][Total 2^36.09][Prob 0.0%][50% in 1.70519e+30y][Found 0]
-[🟐 ]Add:14iXhn8bGajVWegZHJ18vJLHhntcqHAAbv
+[🟑 ]Difficulty: 1461501637330902918203684832716283019655932542976
+[🟑 ]Search: 14iXhn8bGajVWegZHJ18vJLHhntcpL4dex [Compressed]
+[🟑 ]Start Thu Mar 13 11:19:39 2025
+[🟑 ]Base Key: Randomly changed every 100 Mkeys
+[🟑 ]Number of CPU thread: 0
+[🟑 ]GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
+[🟐 ]Add:14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
 [🟐 ]Key:1757756A93 
 
-./VanitySearch -stop -t 0 -gpu -bits 256 -r 500000 -level 4 1Great
-[🟑 ]argv Add to -start -bits Cancel SSE
+
+
+
+./VanitySearch -t 0 -gpu -bits 256 -r 50000 -level 4 1Great
+[🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
 [🟑 ]OpenSSL level 4
-[🟑 ]Difficulty: 264104224CPU performance counter: 1741706049529381 
+[🟑 ]Difficulty: 264104224
 [🟑 ]Search: 1Great [Compressed]
-[🟑 ]Start Tue Mar 11 23:14:09 2025
-[🟑 ]Base Key: Randomly changed every 500000 Mkeys
-[🟑 ]Bit 256 GPU Base Key 69631: 875BAD5FE9BB77E586CE193DC23723966FF39A2A2FC10BCEB927C1A7E61B8786
-[🟐 ]Add:1Greatvd3hMFnc26YeDUKexaoMBLt9aUY8
-[🟐 ]Key:CF05BAF34C44BA759F5C7A56FDAE32928425D41F6D8CCAEEDC502E56A02541E0
+[🟑 ]Start Thu Mar 13 11:22:16 2025
+[🟑 ]Base Key: Randomly changed every 50000 Mkeys
+[🟑 ]Number of CPU thread: 0
+[🟑 ]GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
+
+[🟐 ]Add:1GreatmevrCFqYQYhPRF3DD2QfkgttMcK3
+[🟐 ]Key:E9B8DF44F12DA9D9358BDF01040B43BAE69F69FA8D05774FA88A3A241792BB1D 
+
+[🟐 ]Add:1GreatWNzev6EQnKeftKyhjgvSLJ8xcowE
+[🟐 ]Key:93C0F9E669A5E9BD66609317F4D46F53B4BEEDFBC968587B35EC17770B60B3EE 
+
+[🟐 ]Add:1GreataNR9hK8adRXW6tEFYMv1bo9obeRF
+[🟐 ]Key:B410E7F59235E1BEC174F813728D495D1AF039A482DAA1CC60D847A3BC9FE6AD 
+
+[🟐 ]Add:1GreatkpejvtSTGmBQkm98QeSSQM4Fy4C1
+[🟐 ]Key:F83ABBB8CCAE918D2ABA3F3514FCFA4E46A28CC9A629779F174D44BF56D58AB6 
+
+[🟐 ]Add:1GreatGktLCxJLg518Z6RamVBTiLqheAHV
+[🟐 ]Key:8EF84DF49222E403607A5F5A56CDEC71177D79F8FEE1E63E759C66863EAD1184 
+
+[🟐 ]Add:1GreatPMQpDuirndUpTbGpDrG9yjswKBi1
+[🟐 ]Key:BFD3D12A7D3799BD39AE70B94E5048D88B75E43CC1C664AC8DA3600749D93F45 
+
+[🟐 ]Add:1Greatw6RYZHPEK68PVcepDekQM7wXsWtW
+[🟐 ]Key:D421B1941ADB0244E39D2C9B294961109D24DA45ABCD22E32976B0F636A22704 
+
+[🟐 ]Add:1GreatVkJtkEj1VS31fzoD2m1USvTFH93W
+[🟐 ]Key:CEB40C2C5CFA980D27A099DD968F7D9D11E03642FF646C2505C2AC049A6431E6 
+
+[🟐 ]Add:1GreatbA7Hex2KZ1Vjcnp9kVUNYStUQuxA
+[🟐 ]Key:9619AA7051DCB2970A19F8CF423B16D2B6085FF4FB84D80AEFC0E16455D5F92B 
+
+[🟐 ]Add:1GreateebmqTdqF4LphxukVXQAkf3XGp6U
+[🟐 ]Key:9CC57EF78DAD263F80D93A0C63333A248FA07B6892B3B5CDF7F38C8FD47FD1A8 
+
+[🟐 ]Add:1Great2t5doqChKdUz3CvZEsFJSQJPCKXQ
+[🟐 ]Key:C2BA990A509645E9707239A7C98C39BAFF0C1B6AB8A07F166C682FDCE4898BFF 
+
+[🟐 ]Add:1GreatMuwXckzzXmaXtNzmDzEgvYDCoK2Q
+[🟐 ]Key:AED4F7B0F8926868F9F7B1FE3EC656B940D13BEF167FFF431F3CA88CEE6A94E8 
+
+[🟐 ]Add:1GreatJ4cxDczcSuRYXXqhdiDYMrCAqEbi
+[🟐 ]Key:969730B712C7446DC40EFEFDDCEF78D30C3069000176116970F74DEF363F85E0 
+
+[🟐 ]Add:1GreatFMmmES7XGnWQmZsEfrCizdBiMHTr
+[🟐 ]Key:EB376DDB5520F38DD236C56CDF9E8750287C516FFA58298E84548647A1374BFB 
+
+[🟐 ]Add:1Greatr2zrdgxPkpvsksYKYs1kezzpyF1T
+[🟐 ]Key:EB37B632F1E9BCEEA0DEA35AEA22F086A0F1A151D8E79B2DCA04FD5C47B21CEB 
+
+[🟐 ]Add:1GreataVHfdebKYHz2L9nEzUX9NTLSDPBC
+[🟐 ]Key:B1EA69D209BCFB18901CA66D89754C164A304FB4D5C88E131D97AE6F75CEE4B4 
+
+[🟐 ]Add:1GreatZeae7PQGazgtuFmGVUwUH9NouguS
+[🟐 ]Key:E159B6BF4F0E406FEFE12A12DF5570FA8C0F318E933C761E6ACF11B2B3F930E1 
+
+[🟐 ]Add:1GreatrGbhVvhsVxMFDL25m7ypccWWLWqa
+[🟐 ]Key:E293CDFD7D6C5D13AEC7CEF345ACAAFACD13E229E6E292F17552E57CBF9D8A64 
+[🟑 ][2138.83 Mkey/s][GPU 2138.83 Mkey/s][Total 2^31.99][Prob 100.0%][99% in 00:00:00][Found 18]
+ 
+ 
+
  
 ```
 ------------------------------------------------------------------------------------------------------------------
