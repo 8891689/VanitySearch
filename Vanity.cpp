@@ -34,13 +34,6 @@ using namespace std;
 Point Gn[CPU_GRP_SIZE / 2];
 Point _2Gn;
 
-#ifndef WIN64
-namespace {
-    bool printed_version = false;
-}
-#endif
-
-
 // ----------------------------------------------------------------------------
 
 VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, string seed, string start_key, int Random_bit, int FuncLevel, int searchMode,
@@ -94,7 +87,7 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
 
 	// Logo 2
 #ifndef WIN64
-if (!printed_version) {
+    // 使用 popen 捕获 openssl version -v 的输出
     std::array<char, 128> buffer;
     std::string result;
     std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("openssl version -v", "r"), pclose);
@@ -105,21 +98,18 @@ if (!printed_version) {
         result += buffer.data();
     }
 
+    // 在输出前加上 [🟑 ]
     if (!result.empty()) {
-        printf("\n[🟑 ]%s", result.c_str());
+       printf(" \n");
+       printf("[🟑 ]%s", result.c_str());
+       
     }
-
-    printed_version = true;
-}
 #endif
-
-
-
         
         printf("[🟑 ]OpenSSL level %d\n", FunctionLevel);
 	// Seed random number generator with performance counter
 	if (start_seed_fl) {
-             RandAddSeed();
+             //RandAddSeed();
 	}
 
   lastRekey = 0;
@@ -778,11 +768,11 @@ void VanitySearch::output(string addr,string pAddr,string pAddrHex) {
   if(!needToClose)
     printf("\n");
 
-  fprintf(f, "PubAddress: %s\n", addr.c_str());
+    fprintf(f, "Add:%s\n", addr.c_str());
 
   if (startPubKeySpecified) {
 
-    fprintf(f, "PartialPriv: %s\n", pAddr.c_str());
+    fprintf(f, "Key:%s\n", pAddr.c_str());
 
   } else {
 
@@ -791,13 +781,13 @@ void VanitySearch::output(string addr,string pAddr,string pAddrHex) {
       //fprintf(f, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
       break;
     case P2SH:
-      fprintf(f, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
+      //fprintf(f, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
       break;
     case BECH32:
-      fprintf(f, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
+      //fprintf(f, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
       break;
     }
-    fprintf(f, "Priv (HEX): 0x%s\n", pAddrHex.c_str());
+    fprintf(f, "Key:0x%s\n", pAddrHex.c_str());
 
   }
 
@@ -875,7 +865,6 @@ bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomor
   Point p = secp->ComputePublicKey(&k);
   if (startPubKeySpecified) p = secp->AddDirect(p, sp);
   string chkAddr = secp->GetAddress(searchType, mode, p); // 生成的完整地址是 chkAddr
-
   // --- 修改后的调试输出 - 只保留以下两行 ---
   //printf("\nPrivate Key (HEX): %s\n", k.GetBase16().c_str());
   //printf("Target Address Prefix: %s\n", addr.c_str());
@@ -883,10 +872,13 @@ bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomor
 
 
   if (strncmp(chkAddr.c_str(), addr.c_str(), addr.length()) != 0) {
-      printf("\nWarning, wrong private key generated !\n");
-      printf("  Addr :%s\n", addr.c_str());
-      printf("  Check:%s\n", chkAddr.c_str());
-      printf("  Endo:%d incr:%d comp:%d\n", endomorphism, incr, mode);
+       printf("\n");
+      //printf("\nWarning, wrong private key generated !\n");
+      printf("[🟐 ]Add:%s\n", addr.c_str());
+      //printf("[🟐 ]Check:%s\n", chkAddr.c_str());
+      printf("[🟐 ]Key:%s \n", k.GetBase16().c_str());
+      
+      //printf("[🟐 ]Endo:%d incr:%d comp:%d\n", endomorphism, incr, mode);
       //  return false;  <---  确保这里没有 return false;
 
   } else {
@@ -1277,7 +1269,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
   //rseed((unsigned long)time(NULL));// if not used OpenSSL
   //
   // Seed random number generator with performance counter
-  if (keys_seed_fl) { RandAddSeed(); }
+  //if (keys_seed_fl) { RandAddSeed(); }
   //
   Int one1;
   one1.SetInt32(1);
@@ -1301,7 +1293,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
 
 		//printf("\nBit %d Base Key thId %d: %s < %s or > %s Rekey true \n", Random_bits, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
 		Key_bits_length = key.GetBitLength();
-		printf("[🟑 ]Bit %d Base Key thId %d: %s < %s or > %s Rekey true \r", Key_bits_length, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
+		//printf("[🟑 ]Bit %d Base Key thId %d: %s < %s or > %s Rekey true \r", Key_bits_length, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
 		//
 		key.Rand(Random_bits);// bit 66
 		//
@@ -1318,7 +1310,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
 	//printf("\nBit %d CPU Base Key thId %d: %s\n", Random_bits, thId, key.GetBase16().c_str());
 	Key_bits_length = key.GetBitLength();
 	if (Key_bits_length != Random_bits) goto NewRandom;// check
-	printf("[🟑 ]Bit %d CPU Base Key thId %d: %s\r", Key_bits_length, thId, key.GetBase16().c_str());
+	//printf("[🟑 ]Bit %d CPU Base Key thId %d: %s\r", Key_bits_length, thId, key.GetBase16().c_str());
   } else {
     key.Set(&startKey);
     Int off((int64_t)thId);
@@ -1328,7 +1320,7 @@ void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
 	off.ShiftL((uint32_t)(nbBit - 8));
 	//
 	key.Add(&off);
-	printf("[🟑 ]CPU Base Key thId %d: %s\r", thId, key.GetBase16().c_str());
+	//printf("[🟑 ]CPU Base Key thId %d: %s\r", thId, key.GetBase16().c_str());
   }
   Int km(&key);
   km.Add((uint64_t)CPU_GRP_SIZE / 2);
@@ -1571,7 +1563,7 @@ void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int
   //rseed((unsigned long)time(NULL));// if not used OpenSSL
   //
   // Seed random number generator with performance counter
-  if (keys_seed_fl) { RandAddSeed(); }
+  //if (keys_seed_fl) { RandAddSeed(); }
   //
   Int one1;
   one1.SetInt32(1);
@@ -1609,7 +1601,7 @@ void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int
 	  //if (i < 10 || i > nbThread - 10) { printf("Bit %d GPU Base Key %d: %s\n", Random_bits, i, keys[i].GetBase16().c_str()); }
 	  Key_bits_length = keys[i].GetBitLength();
 	  if (Key_bits_length != Random_bits) goto NewRandom;// check
-	  if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU Base Key %d: %s\r", Key_bits_length, i, keys[i].GetBase16().c_str()); }
+	  //if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU Base Key %d: %s\r", Key_bits_length, i, keys[i].GetBase16().c_str()); }
 	  //
     } else {
       //
@@ -1625,7 +1617,7 @@ void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int
 	  //
       keys[i].Add(&offT);
       keys[i].Add(&offG);
-	  if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU startKey Base Key %d: %s\r", Random_bits, i, keys[i].GetBase16().c_str()); }
+	  //if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU startKey Base Key %d: %s\r", Random_bits, i, keys[i].GetBase16().c_str()); }
 	  //
     }
     //Int k(keys + i);
@@ -1655,7 +1647,7 @@ void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
   Int *keys = new Int[nbThread];
   vector<ITEM> found;
 
-  printf("[🟑 ]GPU: %s\r",g.deviceName.c_str());
+  printf("[🟑 ]GPU: %s\n",g.deviceName.c_str());
 
   counters[thId] = 0;
 
@@ -1789,7 +1781,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
 
   memset(counters,0,sizeof(counters));
 
-  printf("[🟑 ]Number of CPU thread: %d\r", nbCPUThread);
+  printf("[🟑 ]Number of CPU thread: %d\n", nbCPUThread);
 
   TH_PARAM *params = (TH_PARAM *)malloc((nbCPUThread + nbGPUThread) * sizeof(TH_PARAM));
   memset(params,0,(nbCPUThread + nbGPUThread) * sizeof(TH_PARAM));
