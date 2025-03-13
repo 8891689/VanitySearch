@@ -1,7 +1,8 @@
 # VanitySearch
 Forked from https://github.com/JeanLucPons/VanitySearch 
 
-Please note that this is not my project. I just modified the private key, and it is displayed correctly, and the address found is also correct, but the last few digits of the address encoding are still wrong. Only the prefix address is correct, and the hexadecimal private key is correct.
+Please note that this is not my project, I just modified the private key to be correct, the address searched by the puzzle is correct, but the last 6 digits of the vanity address search encoding are still wrong, only the prefix address is correct, and the private key is correct.
+To completely fix the coding errors, the entire coding and underlying implementation needs to be rewritten. Since this project is not my own and has to rely on financial support from any caring people, I do not intend to rewrite the implementation. Please understand that this project will only be motivated to fix it if there is support from caring people.
 ```
 VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
              [-gpuId gpuId1[,gpuId2,...]] [-g g1x,g1y,[,g2x,g2y,...]]
