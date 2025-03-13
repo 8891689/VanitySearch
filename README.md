@@ -84,7 +84,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟑 ][0.90 Mkey/s][GPU 0.00 Mkey/s][Total 2^23.11][Prob 86.2%][90% in 00:00:01][Found 0]
 [🟐 ]Add:1btcTx6Mf6afwvZfLLFF4Sayx7bxuuF65
 [🟐 ]Key:C071987238FBF331D36593891B3AEAC8D1D414B0E1A8AC10F68DC23DFD0B4C84 
-
+```
 
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -105,7 +105,6 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟐 ]Add:1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
 [🟐 ]Key:22382FACD0 
 
-
 ./VanitySearch -stop -t 0 -gpu -bits 37 -r 100 -level 4 14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
 [🟑 ]Argv add to -start -bits Cancel SSE 
 [🟑 ]OpenSSL 3.0.15 3 Sep 2024 (Library: OpenSSL 3.0.15 3 Sep 2024)
@@ -118,7 +117,6 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟑 ]GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
 [🟐 ]Add:14iXhn8bGajVWegZHJ18vJLHhntcpL4dex
 [🟐 ]Key:1757756A93 
-
 
 
 
@@ -186,20 +184,17 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 
 [🟐 ]Add:1GreatrGbhVvhsVxMFDL25m7ypccWWLWqa
 [🟐 ]Key:E293CDFD7D6C5D13AEC7CEF345ACAAFACD13E229E6E292F17552E57CBF9D8A64 
-[🟑 ][2138.83 Mkey/s][GPU 2138.83 Mkey/s][Total 2^31.99][Prob 100.0%][99% in 00:00:00][Found 18]
- 
- 
+[🟑 ][2138.83 Mkey/s][GPU 2138.83 Mkey/s][Total 2^31.99][Prob 100.0%][99% in 00:00:00][Found 18] 
 
- 
-```
 ------------------------------------------------------------------------------------------------------------------
+
 Random Bitcoin Puzzle #68 Private Keys
 Start key 0000000000000000000000000000000000000000000000080000000000000000 
 Stop key 00000000000000000000000000000000000000000000000fffffffffffffffff 
 80000000000000000...fffffffffffffffff (267...268)
 P2PKH(c) 1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ
 
-
+```
 ```
 Shāng (wèi):68 Zǒng jiàn shù:295147905179352825856 Sōusuǒ sùdù:2123 Měi miǎo M jiàn shù (10^6) tiān:1609073.819 Xīngqí:229867.688 Yuè:52791.136 Nián:4405.404
 108 / 5,000
@@ -210,8 +205,9 @@ Day: 1609073.819
 Week: 229867.688
 Month: 52791.136
 Year: 4405.404
-```
+
 ----------------------------------------------------------------------------------------------------------------
+
 Check Bits: 28 \
 Compressed Address: \
 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY \
@@ -224,9 +220,9 @@ pk: \
 03e9e661838a96a65331637e2a3e948dc0756e5009e7cb5c36664d9b72dd18c0a7 
 
 ----------------------------------------------------------------------------------------------------------------
-
+```
 ## Windows
-
+```
 Intall CUDA SDK and build OpenSSL, open VanitySearch.sln in Visual C++ 2017. \
 You may need to reset your *Windows SDK version* in project properties. \
 In Build->Configuration Manager, select the *Release* configuration. \
@@ -271,35 +267,36 @@ Build and enjoy.\
 \
 Note: The current relase has been compiled with CUDA SDK 10.2, if you have a different release of the CUDA SDK, you may need to update CUDA SDK paths in VanitySearch.vcxproj using a text editor. 
 The current nvcc option are set up to architecture starting at 3.0 capability, for older hardware, add the desired compute capabilities to the list in GPUEngine.cu properties, CUDA C/C++, Device, Code Generation.
-
+```
 ## Linux
-
+```
 Intall OpenSSL.\
 Intall CUDA SDK.\
 Depenging on the CUDA SDK version and on your Linux distribution you may need to install an older g++ (just for the CUDA SDK).\
 Edit the makefile and set up the good CUDA SDK path and appropriate compiler for nvcc. 
 
-```
 CUDA       = /usr/local/cuda
 CXXCUDA    = /usr/bin/g++
-```
+
 
 You can enter a list of architectrure (refer to nvcc documentation) if you have several GPU with different architecture. Compute capability 2.0 (Fermi) is deprecated for recent CUDA SDK.
 VanitySearch need to be compiled and linked with a recent gcc (>=7). The current release has been compiled with gcc 7.3.0.\
 Go to the VanitySearch directory. 
 ccap is the desired compute capability https://ru.wikipedia.org/wiki/CUDA
 
-```
-$ g++ -v
+g++ -v
+
 gcc version 7.3.0 (Ubuntu 7.3.0-27ubuntu1~18.04)
-$ make all (for build without CUDA support)
+
+make all (for build without CUDA support)
 or
-$   make gpu=1 ccap=86 all
+make gpu=0 ccap=86 all
 
-```
-Please fill in the form according to your graphics card computing capabilities.  ccap=86  3080 is 86, not 8.6. Remove the decimal point from the following values.
+Please fill in the form according to your graphics card computing capabilities.
 
-```
+ccap=86  3080 is 86, not 8.6. Remove the decimal point from the following values.
+
+
 NVIDIA A100	8	RTX A5000	8.6	GeForce RTX 3090 Ti	8.6	GeForce RTX 3080 Ti	8.6
 NVIDIA A40	8.6	RTX A4000	8.6	GeForce RTX 3090	8.6	GeForce RTX 3080	8.6
 NVIDIA A30	8	RTX A3000	8.6	GeForce RTX 3080 Ti	8.6	GeForce RTX 3070 Ti	8.6
@@ -360,15 +357,15 @@ GeForce GT 730	3.5	GeForce 710M	2.1	GeForce GTX 465	2	GeForce GT 720M	2.1
 GeForce GT 720	3.5	GeForce 610M	2.1	GeForce GT 740	3	GeForce GT 620M	2.1
 ```
 # License
-
+```
 VanitySearch is licensed under GPLv3.
-
+```
 ## Sponsorship
 
 If this project has been helpful to you, please consider sponsoring. It is the greatest support for me, and I am deeply grateful. Thank you.
-
+```
 - **BTC**: bc1qt3nh2e6gjsfkfacnkglt5uqghzvlrr6jahyj2k
 - **ETH**: 0xD6503e5994bF46052338a9286Bc43bC1c3811Fa1
 - **DOGE**: DTszb9cPALbG9ESNJMFJt4ECqWGRCgucky
 - **TRX**: TAHUmjyzg7B3Nndv264zWYUhQ9HUmX4Xu4
-  
+ ``` 
