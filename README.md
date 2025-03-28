@@ -41,7 +41,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ```
 
 --------------------------------------------------------------------------------------------------------------
-#CPU Vanity Address and Jigsaw Puzzle Instances
+# CPU Vanity Address and Jigsaw Puzzle Instances
 ```
 ./VanitySearch -stop -t 4 -bits 28 -r 5000 -level 4 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
 [🟑 ]Argv add to -start -bits Cancel SSE 
@@ -85,7 +85,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟐 ]Key:C071987238FBF331D36593891B3AEAC8D1D414B0E1A8AC10F68DC23DFD0B4C84 
 ```
 ---------------------------------------------------------------------------------------------------------------------
-#GPU Vanity Address and Jigsaw Puzzle Instances
+# GPU Vanity Address and Jigsaw Puzzle Instances
 
 ```
 ./VanitySearch -stop -t 0 -gpu -bits 38 -r 50000 -level 4 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
@@ -359,8 +359,8 @@ VanitySearch is licensed under GPLv3.
 
 If this project has been helpful to you, please consider sponsoring. It is the greatest support for me, and I am deeply grateful. Thank you.
 ```
-- **BTC**: bc1qt3nh2e6gjsfkfacnkglt5uqghzvlrr6jahyj2k
-- **ETH**: 0xD6503e5994bF46052338a9286Bc43bC1c3811Fa1
-- **DOGE**: DTszb9cPALbG9ESNJMFJt4ECqWGRCgucky
-- **TRX**: TAHUmjyzg7B3Nndv264zWYUhQ9HUmX4Xu4
+- BTC: bc1qt3nh2e6gjsfkfacnkglt5uqghzvlrr6jahyj2k
+- ETH: 0xD6503e5994bF46052338a9286Bc43bC1c3811Fa1
+- DOGE: DTszb9cPALbG9ESNJMFJt4ECqWGRCgucky
+- TRX: TAHUmjyzg7B3Nndv264zWYUhQ9HUmX4Xu4
  ``` 
