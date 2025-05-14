@@ -225,7 +225,6 @@ macOS (using Homebrew):
 brew install openssl
 ```
 ```
-```
 ------------------------------------------------------------------------------------------------------------------
 
 Random Bitcoin Puzzle #68 Private Keys
