@@ -194,9 +194,38 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 [🟐 ]WIF: L4CbhEAfuXNnufjgLYJVn3xzTT3tMUivgBLahVAxW1b4z1iNPkxr
 [🟐 ]Key: 0xD04A2E8E7AA89C85CE7D103B4EF76C343D598ADE3819C3605E4853685829F107
 ^C
-
+```
 The results are saved to Found.txt by default
 
+# Dependencies
+
+Debian/Ubuntu based systems (such as Debian if you are using it):
+```
+sudo apt update
+sudo apt install libssl-dev
+```
+
+Fedora/CentOS/RHEL based systems:
+```
+sudo yum install openssl-devel
+```
+
+or for newer Fedora/CentOS Stream/RHEL 8+
+```
+sudo dnf install openssl-devel
+```
+
+Arch Linux based systems:
+```
+sudo pacman -S openssl
+```
+
+macOS (using Homebrew):
+```
+brew install openssl
+```
+```
+```
 ------------------------------------------------------------------------------------------------------------------
 
 Random Bitcoin Puzzle #68 Private Keys
