@@ -12,13 +12,15 @@ I only fixed the following issues:
 
 
 7. Verify the results
+
+``` 
 ./VanitySearch -cp 1
 PrivAddr: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
 PubKey: 0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
 Addr (P2PKH): 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
 Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
 Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
-
+```
    
 ```
 VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
