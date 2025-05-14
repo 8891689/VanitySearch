@@ -208,7 +208,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 The results are saved to Found.txt by default
 
 
-# The original version has been fixed. You can use the original version to search for Vanity addresses. With a little optimization, the speed is quite fast.
+# The original version has been repaired, and you can use the original version to search for Vanity addresses. It has been slightly optimized and the speed is still quite fast, and you don’t have to rely on the library.
 ```
 /VanitySearch -stop -t 0 -gpu bc1qmqzlduj
 VanitySearch v1.19
@@ -231,7 +231,7 @@ Addr (P2SH): 3N9FcVopVd2oP5QxQRwGYPNHyEWZmpfQzh
 Addr (BECH32): bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
 ```
 
-The original version has been repaired, and you can use the original version to search for Vanity addresses. It has been slightly optimized and the speed is still quite fast, and you don’t have to rely on the library.
+
 
 # Dependencies
 
