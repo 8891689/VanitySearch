@@ -10,6 +10,15 @@ I only fixed the following issues:
 5. Fixed the issue of an insecure weak random number generator by replacing it with OpenSSL's random number generator.
 6. Added a feature to divide the private key area for puzzle puzzles, adding -r to regenerate random numbers when the specified private key area reaches a certain quantity, improving the probability of puzzle hits. The more random, the slower (the smaller the value after -r, the slower),and this program or other programs can only use point addition ECC high-speed calculations, not normal standard calculations.
 
+
+7. Verify the results
+./VanitySearch -cp 1
+PrivAddr: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+PubKey: 0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+Addr (P2PKH): 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
+Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+
    
 ```
 VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
