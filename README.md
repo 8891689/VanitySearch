@@ -207,6 +207,32 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ```
 The results are saved to Found.txt by default
 
+
+# The original version has been fixed. You can use the original version to search for Vanity addresses. With a little optimization, the speed is quite fast.
+```
+/VanitySearch -stop -t 0 -gpu bc1qmqzlduj
+VanitySearch v1.19
+Difficulty: 34359738368
+Search: bc1qmqzlduj [Compressed]
+Start Thu May 15 03:31:04 2025
+Base Key: 38A731F4740F67F685BB2AB453EC8167CDF2922A96075C900309E2750B4BB36D
+Number of CPU thread: 0
+GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
+[3635.93 Mkey/s][GPU 3635.93 Mkey/s][Total 2^35.57][Prob 77.3%][80% in 00:00:01][Found 0]  
+PubAddress: bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
+Priv (WIF): p2wpkh:L3uDSAXcFB2YnPQ2upSgAyeurAks7TWaR5rebduQp5ZbxuC1aLWB
+Priv (HEX): 0xC758CE0B8BF098097A44D54BAC137E96EC3C4ABBA1D943ABBCC87C17C4E8A286
+
+./VanitySearch -cp C758CE0B8BF098097A44D54BAC137E96EC3C4ABBA1D943ABBCC87C17C4E8A286
+PrivAddr: p2pkh:L3uDSAXcFB2YnPQ2upSgAyeurAks7TWaR5rebduQp5ZbxuC1aLWB
+PubKey: 0369B34E4D57F230A63D1FCD389F0ED85FC9A94C167DA5D4F523BAF3D6663835FC
+Addr (P2PKH): 1LhE6sCY97uMAiF28MiT4BikaUPJin5Zip
+Addr (P2SH): 3N9FcVopVd2oP5QxQRwGYPNHyEWZmpfQzh
+Addr (BECH32): bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
+```
+
+The original version has been repaired, and you can use the original version to search for Vanity addresses. It has been slightly optimized and the speed is still quite fast, and you don’t have to rely on the library.
+
 # Dependencies
 
 Debian/Ubuntu based systems (such as Debian if you are using it):
