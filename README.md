@@ -21,7 +21,17 @@ Addr (P2PKH): 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
 Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
 Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
 ```
-   
+
+If you don't want to compile, give all users execution permissions (if necessary):
+```
+chmod +x VanitySearch
+```
+Clean and recompile
+```
+make clean
+
+make gpu=0 ccap=86 all
+```
 ```
 VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
              [-gpuId gpuId1[,gpuId2,...]] [-g g1x,g1y,[,g2x,g2y,...]]
