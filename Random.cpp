@@ -1,208 +1,132 @@
-/*
- * This file is part of the VanitySearch distribution (https://github.com/JeanLucPons/VanitySearch).
- * Copyright (c) 2019 Jean Luc PONS.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+/*MIT License
+
+Copyright (c) 2025 8891689
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. 
 */
+#include <stdio.h>
+#include <stdint.h> // For uint32_t
+#include <cstdlib>
 
 #include "Random.h"
 
-// add openssl
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ec.h>
-#include <openssl/rand.h>
-#include <openssl/pem.h>
-#include <openssl/ripemd.h>
-//
-#include <cstring>
-
-#define  RK_STATE_LEN 624
-
-/* State of the RNG */
-typedef struct rk_state_
-{
-  unsigned long key[RK_STATE_LEN];
-  int pos;
-} rk_state;
-
-rk_state localState;
-
-/* Maximum generated random value */
-#define RK_MAX 0xFFFFFFFFUL
-
-void rk_seed(unsigned long seed, rk_state *state)
-{
-  int pos;
-  seed &= 0xffffffffUL;
-
-  /* Knuth's PRNG as used in the Mersenne Twister reference implementation */
-  for (pos=0; pos<RK_STATE_LEN; pos++)
-  {
-    state->key[pos] = seed;
-    seed = (1812433253UL * (seed ^ (seed >> 30)) + pos + 1) & 0xffffffffUL;
-  }
-
-  state->pos = RK_STATE_LEN;
-}
-
-/* Magic Mersenne Twister constants */
-#define N 624
-#define M 397
-#define MATRIX_A 0x9908b0dfUL
-#define UPPER_MASK 0x80000000UL
-#define LOWER_MASK 0x7fffffffUL
-
-#ifdef WIN32
-// Disable "unary minus operator applied to unsigned type, result still unsigned" warning.
-#pragma warning(disable : 4146)
-#endif
-
-/* Slightly optimised reference implementation of the Mersenne Twister */
-inline unsigned long rk_random(rk_state *state)
-{
-  unsigned long y;
-
-  if (state->pos == RK_STATE_LEN)
-  {
-    int i;
-
-    for (i=0;i<N-M;i++)
-    {
-      y = (state->key[i] & UPPER_MASK) | (state->key[i+1] & LOWER_MASK);
-      state->key[i] = state->key[i+M] ^ (y>>1) ^ (-(y & 1) & MATRIX_A);
-    }
-    for (;i<N-1;i++)
-    {
-      y = (state->key[i] & UPPER_MASK) | (state->key[i+1] & LOWER_MASK);
-      state->key[i] = state->key[i+(M-N)] ^ (y>>1) ^ (-(y & 1) & MATRIX_A);
-    }
-    y = (state->key[N-1] & UPPER_MASK) | (state->key[0] & LOWER_MASK);
-    state->key[N-1] = state->key[M-1] ^ (y>>1) ^ (-(y & 1) & MATRIX_A);
-
-    state->pos = 0;
-  }
-
-  y = state->key[state->pos++];
-
-  /* Tempering */
-  y ^= (y >> 11);
-  y ^= (y << 7) & 0x9d2c5680UL;
-  y ^= (y << 15) & 0xefc60000UL;
-  y ^= (y >> 18);
-
-  return y;
-}
-
-inline double rk_double(rk_state *state)
-{
-  /* shifts : 67108864 = 0x4000000, 9007199254740992 = 0x20000000000000 */
-  long a = rk_random(state) >> 5, b = rk_random(state) >> 6;
-  return (a * 67108864.0 + b) / 9007199254740992.0;
-}
-
-// Initialise the random generator with the specified seed
-void rseed(unsigned long seed) {
-  rk_seed(seed,&localState);
-  //srand(seed);
-}
-
-//unsigned long rndl() {
-  //return rk_random(&localState);
-//}
-
-// Returns a uniform distributed double value in the interval ]0,1[
-double rnd() {
-  return rk_double(&localState);
-}
-
-//================================================================
-// Generate randon number. Used source of code bitcoin core v0.2.0
-// Used OpenSSL v3.1.1 OR old version OpenSSL v1.0.1a
-
-int64 PerformanceCounter()
-{
-    int64 nCounter = 0;
-#ifdef WIN64
-    QueryPerformanceCounter((LARGE_INTEGER*)&nCounter);
+#ifdef _WIN32
+    #include <stdlib.h>  // 提供 rand_s
 #else
-    timeval t;
-    gettimeofday(&t, NULL);
-    nCounter = t.tv_sec * 1000000 + t.tv_usec;
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <errno.h>
 #endif
-    return nCounter;
+
+// 全局文件描述符，避免每次打开关闭 /dev/urandom
+#ifndef _WIN32
+static int urandom_fd = -1;
+
+// 初始化 /dev/urandom 文件描述符
+static void init_urandom_fd() {
+    if (urandom_fd < 0) {
+        urandom_fd = open("/dev/urandom", O_RDONLY);
+        if (urandom_fd < 0) {
+            perror("无法打开 /dev/urandom");
+            // 致命错误，退出或者标记错误状态
+            // 为了简单，这里选择退出
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+#endif
+
+
+int generateRandomBinary(char *bin, int bits) {
+    if (bits < 0 || bits > 512) {
+        return -1;
+    }
+    if (bits == 0) {
+        bin[0] = '\0';
+        return 0;
+    }
+
+    int current_bin_idx = 0; // Current index in the output bin string
+
+#ifdef _WIN32
+    unsigned int random_dword;
+    for (int i = 0; i < bits; ) { // Iterate until all 'bits' are filled
+        if (rand_s(&random_dword) != 0) {
+            perror("rand_s failed");
+            return -1;
+        }
+        // Extract up to 32 bits from this random_dword, MSB first
+        for (int j = 0; j < 32 && i < bits; ++j, ++i) {
+            // Get the (31-j)-th bit of random_dword (0-indexed from LSB, so 31 is MSB)
+            bin[current_bin_idx++] = ((random_dword >> (31 - j)) & 1) ? '1' : '0';
+        }
+    }
+#else
+    init_urandom_fd(); // Ensure fd is initialized (idempotent)
+    unsigned char random_byte;
+    for (int i = 0; i < bits; ) { // Iterate until all 'bits' are filled
+        if (read(urandom_fd, &random_byte, 1) != 1) {
+            perror("读取 /dev/urandom 失败");
+            return -1;
+        }
+        // Extract up to 8 bits from this random_byte, MSB first
+        for (int j = 0; j < 8 && i < bits; ++j, ++i) {
+            // Get the (7-j)-th bit of random_byte (0-indexed from LSB, so 7 is MSB)
+            bin[current_bin_idx++] = ((random_byte >> (7 - j)) & 1) ? '1' : '0';
+        }
+    }
+#endif
+    bin[bits] = '\0'; // Null-terminate the string
+    return 0;
 }
 
-void RandAddSeed()
-{
-    // Seed with CPU performance counter
-    int64 nCounter = PerformanceCounter();
-	
-	printf("\r[i] RAND_add() Seed with CPU performance counter: %lld \r", nCounter);
-	//printf("\n[i] PerformanceCounter() nCounter: %lld \n", nCounter);
-	
-    RAND_add(&nCounter, sizeof(nCounter), 1.5);
-    memset(&nCounter, 0, sizeof(nCounter));
+void convertBinaryToHex(const char *bin, char *hex, int bits) {
+    int hexDigits = bits / 4;
+    for (int i = 0; i < hexDigits; i++) {
+        int value = 0;
+        // 每4位二进制转换为一个0～15的数值
+        for (int j = 0; j < 4; j++) {
+            value = value * 2 + (bin[i * 4 + j] - '0');
+        }
+        // 转换为16进制字符
+        hex[i] = (value < 10) ? ('0' + value) : ('A' + (value - 10));
+    }
+    hex[hexDigits] = '\0';
 }
 
-unsigned long long rndll() { //unsigned long rndl() {
-	
-	// Make random number
-	
-	//time_t tim;	
-	//time(&tim);	
-	//RAND_add(&tim, sizeof(tim), 0.0);// add nTime
-	
-	//RandAddSeed();// add Performance Counter
-	
-	unsigned char buf[32];//unsigned char buf[8];
-	
-	RAND_bytes((unsigned char *)buf, 32);//RAND_bytes((unsigned char *)buf, 8);
-	
-	unsigned long long vOut = 0;//unsigned long vOut = 0;
-	
-	unsigned long long *vTmp = (unsigned long long *)&buf;//unsigned long *vTmp = (unsigned long *)&buf;
-	
-	vOut = vTmp[0];
-	
-	//printf("\nrndll() vTmp[0]: %llX ", vTmp[0]);//printf("\nrndl() vTmp: %lX ", vTmp[0]);
-	
-	return vOut;
-	
-}
-//================================================================
 
-void rnd256(unsigned long long b64[4]) {
-	
-	// Make random number
-	
-	//time_t tim;	
-	//time(&tim);	
-	//RAND_add(&tim, sizeof(tim), 0.0);// add nTime
-	
-	//RandAddSeed();// add Performance Counter
-	
-	unsigned char buf[32];
-	
-	RAND_bytes((unsigned char *)buf, 32);
-	
-	unsigned long long *vTmp = (unsigned long long *)&buf;
-	
-	b64[0] = vTmp[0];
-	b64[1] = vTmp[1];
-	b64[2] = vTmp[2];
-	b64[3] = vTmp[3];
-	
-	//printf("\nrnd256() %llX %llX %llX %llX ", vTmp[3], vTmp[2], vTmp[1], vTmp[0]);
+//  rndl() 的实现
+uint32_t rndl() {
+    uint32_t random_value;
+#ifdef _WIN32
+    if (rand_s(&random_value) != 0) {
+        perror("rand_s failed in rndl");
+        // 致命错误，无法生成随机数，退出
+        exit(EXIT_FAILURE);
+    }
+#else
+    init_urandom_fd(); // 确保 fd 已初始化
+    if (read(urandom_fd, &random_value, sizeof(random_value)) != sizeof(random_value)) {
+        perror("读取 /dev/urandom 失败 in rndl");
+         // 致命错误，无法生成随机数，退出
+        exit(EXIT_FAILURE);
+    }
+#endif
+    return random_value;
 }
-//================================================================

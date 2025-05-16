@@ -1,45 +1,45 @@
-/*
- * This file is part of the VanitySearch distribution (https://github.com/JeanLucPons/VanitySearch).
- * Copyright (c) 2019 Jean Luc PONS.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
-
+/*Author: 8891689
+ * Assist in creation ：ChatGPT 
+ */
 #ifndef RANDOM_H
 #define RANDOM_H
+#include <cstdint>
 
-#ifdef WIN64
-	#include <windows.h>
-	#include <time.h>
-#else
-	#include <sys/time.h>	
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#if defined(_MSC_VER) || defined(__BORLANDC__)
-typedef __int64  int64;
-typedef unsigned __int64  uint64;
-#else
-typedef long long  int64;
-typedef unsigned long long  uint64;
+/* 
+ * generateRandomBinary
+ * 生成随机二进制字符串，每一位模拟一次“抛硬币”得到 0 或 1。
+ * 参数：
+ *   bin  - 用于存放生成的二进制字符串（长度至少为 bits+1 个字符）
+ *   bits - 需要生成的位数，取值范围 0～512
+ * 返回：
+ *   0 成功，非 0 表示出错
+ */
+int generateRandomBinary(char *bin, int bits);
+
+/*
+ * convertBinaryToHex
+ * 将二进制字符串转换为16进制字符串，要求二进制位数为4的倍数。
+ * 参数：
+ *   bin  - 输入的二进制字符串（长度为 bits 位）
+ *   hex  - 输出的16进制字符串（预留 bits/4 + 1 个字符空间）
+ *   bits - 二进制位数（必须是4的倍数）
+ */
+void convertBinaryToHex(const char *bin, char *hex, int bits);
+/*
+ * rndl
+ * Generate a 32-bit random number.
+ * Returns:
+ *   A 32-bit random number.
+ */
+uint32_t rndl(); // <-- Add this line
+
+#ifdef __cplusplus
+}
 #endif
 
-int64 PerformanceCounter();
-void RandAddSeed();
+#endif // RANDOM_H
 
-void rnd256(unsigned long long b64[4]);
-
-double rnd();
-unsigned long long rndll();//unsigned long rndl();
-void rseed(unsigned long seed);
-
-#endif
