@@ -22,7 +22,7 @@ Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
 Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
 ```
 
-If you don't want to compile, give all users execution permissions (if necessary):
+If you use the 86GPU architecture, you can use it directly. Please grant execution permissions (if necessary):
 ```
 chmod +x VanitySearch
 ```
