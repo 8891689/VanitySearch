@@ -13,6 +13,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ 
+ * Copyright (c) 2025 8891689
+ * https://github.com/8891689
+ * This code file contains modifications of the original work (Copyright (c) 2019 Jean Luc PONS).
 */
 #include "Timer.h"
 #include "Vanity.h"
@@ -23,12 +27,63 @@
 #include <stdexcept>
 #include "hash/sha512.h"
 #include "hash/sha256.h"
+#include "bitrange.h" 
 
-#define RELEASE "1.19"
-
-#define RELEASE_mod "0.03"
+#define RELEASE "2.0"
 
 using namespace std;
+
+// --- Helper functions for parsing range (implementing bitrange.h functionality here) ---
+// Note: In a real project, these might be in bitrange.cpp
+
+// Sets range to [2^(bits-1), 2^bits - 1]
+int parseBitRange(int bits, Int* min_val, Int* max_val) {
+    if (bits <= 0) {
+        fprintf(stderr, "Error: -bits argument must be positive.\n");
+        return -1;
+    }
+    if (bits > Int::NB64BLOCK * 64) { // Check against max possible bits Int can handle
+        fprintf(stderr, "Error: -bits argument (%d) is too large for Int type.\n", bits);
+        return -1;
+    }
+
+    // min = 2^(bits - 1)
+    min_val->SetInt32(1);
+    if (bits > 1) {
+      min_val->ShiftL(bits - 1);
+    }
+    // max = 2^bits - 1
+    max_val->SetInt32(1);
+    max_val->ShiftL(bits);
+    max_val->SubOne();
+
+    return 0; // Success
+}
+
+// Sets range from hex string A:B
+int parseHexRange(const string& range_str, Int* min_val, Int* max_val) {
+    size_t colon_pos = range_str.find(':');
+    if (colon_pos == string::npos || colon_pos == 0 || colon_pos == range_str.length() - 1) {
+        fprintf(stderr, "Error: -area argument must be in format A:B (hex values).\n");
+        return -1;
+    }
+
+    string min_hex = range_str.substr(0, colon_pos);
+    string max_hex = range_str.substr(colon_pos + 1);
+
+    try {
+        min_val->SetBase16((char*)min_hex.c_str()); // SetBase16 expects char*
+        max_val->SetBase16((char*)max_hex.c_str()); // SetBase16 expects char*
+    } catch (...) { // Basic catch for potential parsing errors
+         fprintf(stderr, "Error: Invalid hex value in -area argument.\n");
+         return -1;
+    }
+
+
+    return 0; // Success
+}
+// --- End Helper functions ---
+
 
 // ------------------------------------------------------------------------------------------
 
@@ -37,9 +92,9 @@ void printUsage() {
   printf("VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]\n");
   printf("             [-gpuId gpuId1[,gpuId2,...]] [-g g1x,g1y,[,g2x,g2y,...]]\n");
   printf("             [-o outputfile] [-m maxFound] [-ps seed] [-s seed] [-t nbThread]\n");
-  printf("             [-start] [-bits] [-level]\n");
   printf("             [-nosse] [-r rekey] [-check] [-kp] [-sp startPubKey]\n");
-  printf("             [-rp privkey partialkeyfile] [prefix]\n\n");
+  printf("             [-rp privkey partialkeyfile]\n");
+  printf("             [-bits N] [-area A:B] [prefix]\n\n"); // <-- 添加新参数说明
   printf(" prefix: prefix to search (Can contains wildcard '?' or '*')\n");
   printf(" -v: Print version\n");
   printf(" -u: Search uncompressed addresses\n");
@@ -53,9 +108,6 @@ void printUsage() {
   printf(" -g g1x,g1y,g2x,g2y, ...: Specify GPU(s) kernel gridsize, default is 8*(MP number),128\n");
   printf(" -m: Specify maximun number of prefixes found by each kernel call\n");
   printf(" -s seed: Specify a seed for the base key, default is random\n");
-  printf(" -start startKey: Set Starting key, default is random bits 66\n");
-  printf(" -bits number: Set Random bits, default is random bits 66\n");
-  printf(" -level number: Set number 0-4 to Enable OpenSSL functions, default: -level 1\n");
   printf(" -ps seed: Specify a seed concatened with a crypto secure random seed\n");
   printf(" -t threadNumber: Specify number of CPU thread, default is number of core\n");
   printf(" -nosse: Disable SSE hash function\n");
@@ -66,11 +118,13 @@ void printUsage() {
   printf(" -kp: Generate key pair\n");
   printf(" -rp privkey partialkeyfile: Reconstruct final private key(s) from partial key(s) info.\n");
   printf(" -sp startPubKey: Start the search with a pubKey (for private key splitting)\n");
-  printf(" -r rekey: Rekey interval in MegaKey, default is disabled\n");
+  printf(" -r rekey: Rekey interval in MegaKey, default is disabled (deterministic search).\n");
+  printf("           When > 0, sample random keys within the specified range.\n");
+  printf(" -bits N: Search random keys in the range [2^(N-1), 2^N-1] (for rekey > 0 or restricted search).\n"); // <-- 新参数说明
+  printf(" -area A:B: Search random keys in the hex range [A, B] (for rekey > 0 or restricted search).\n"); // <-- 新参数说明
   exit(0);
 
 }
-
 // ------------------------------------------------------------------------------------------
 
 int getInt(string name,char *v) {
@@ -113,7 +167,7 @@ void getInts(string name,vector<int> &tokens, const string &text, char sep) {
 
   } catch(std::invalid_argument &) {
 
-    printf("[🟑 ]Invalid %s argument, number expected\n",name.c_str());
+    printf("Invalid %s argument, number expected\n",name.c_str());
     exit(-1);
 
   }
@@ -155,7 +209,7 @@ void parseFile(string fileName, vector<string> &lines) {
       nbLine++;
       if (loaddingProgress) {
         if ((nbLine % 50000) == 0)
-         printf("[Loading input file %5.1f%%]\r", ((double)nbLine*100.0) / ((double)(nbAddr)*33.0 / 34.0));
+          printf("[Loading input file %5.1f%%]\r", ((double)nbLine*100.0) / ((double)(nbAddr)*33.0 / 34.0));
       }
     }
 
@@ -218,21 +272,21 @@ void outputAdd(string outputFile, int addrType, string addr, string pAddr, strin
     }
   }
 
-  fprintf(f, "\nPub Addr: %s\n", addr.c_str());
+  fprintf(f, "\n✿  Add: %s\n", addr.c_str());
 
 
   switch (addrType) {
   case P2PKH:
-    fprintf(f, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
+    fprintf(f, "✿  WIF: p2pkh:%s\n", pAddr.c_str());
     break;
   case P2SH:
-    fprintf(f, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
+    fprintf(f, "✿  WIF: p2wpkh-p2sh:%s\n", pAddr.c_str());
     break;
   case BECH32:
-    fprintf(f, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
+    fprintf(f, "✿  WIF: p2wpkh:%s\n", pAddr.c_str());
     break;
   }
-  fprintf(f, "Priv (HEX): 0x%s\n", pAddrHex.c_str());
+  fprintf(f, "✿  KEY: 0x%s\n", pAddrHex.c_str());
 
   if (needToClose)
     fclose(f);
@@ -374,7 +428,7 @@ int main(int argc, char* argv[]) {
 
   // Global Init
   Timer::Init();
-  rseed((unsigned long)time(NULL));
+
 
   // Init SecpK1
   Secp256K1 *secp = new Secp256K1();
@@ -382,6 +436,21 @@ int main(int argc, char* argv[]) {
 
   //GPUEngine::GenerateCode(secp,512);
   //exit(0);
+
+  // --- 初始化默认范围 [1, N-1] ---
+  Int min_range;
+  Int max_range;
+  Int one_int((uint64_t)1); // 用于设置 min_range 的默认值 1
+
+  // 获取曲线阶数 N
+  Int N_order = secp->order;
+  Int N_minus_one = N_order;
+  N_minus_one.SubOne(); // 计算 N-1
+
+  // 设置默认范围 [1, N-1]
+  min_range.Set(&one_int);
+  max_range.Set(&N_minus_one);
+  // --- 结束新增 ---
 
   // Browse arguments
   if (argc < 2) {
@@ -396,14 +465,11 @@ int main(int argc, char* argv[]) {
   vector<int> gpuId = {0};
   vector<int> gridSize;
   string seed = "";
-  string start_key = "";
-  int rand_bit = 66;// Random Bit 66
-  int FuncLevel = 1;// OpenSLL functions case 0-4
   vector<string> prefix;
-  string outputFile = "Found.txt";
+  string outputFile = "";
   int nbCPUThread = Timer::getCoreNumber();
   bool tSpecified = false;
-  bool sse = false;//bool sse = true;
+  bool sse = true;
   uint32_t maxFound = 65536;
   uint64_t rekey = 0;
   Point startPuKey;
@@ -411,14 +477,16 @@ int main(int argc, char* argv[]) {
   bool startPubKeyCompressed;
   bool caseSensitive = true;
   bool paranoiacSeed = false;
+  bool range_specified = false; // 通过 -bits 或 -area 指定范围
 
-  while (a < argc) {
+  while (a < argc) { 
 
     if (strcmp(argv[a], "-gpu")==0) {
       gpuEnable = true;
       a++;
     } else if (strcmp(argv[a], "-gpuId")==0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -gpuId requires an argument.\n"); exit(-1); }
       getInts("gpuId",gpuId,string(argv[a]),',');
       a++;
     } else if (strcmp(argv[a], "-stop") == 0) {
@@ -461,11 +529,13 @@ int main(int argc, char* argv[]) {
       exit(0);
     } else if (strcmp(argv[a], "-sp") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -sp requires an argument.\n"); exit(-1); }
       string pub = string(argv[a]);
       startPuKey = secp->ParsePublicKeyHex(pub, startPubKeyCompressed);
       a++;
     } else if(strcmp(argv[a],"-ca") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -ca requires an argument.\n"); exit(-1); }
       string pub = string(argv[a]);
       bool isComp;
       Point p = secp->ParsePublicKeyHex(pub,isComp);
@@ -475,6 +545,7 @@ int main(int argc, char* argv[]) {
       exit(0);
     } else if (strcmp(argv[a], "-cp") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -cp requires an argument.\n"); exit(-1); }
       string priv = string(argv[a]);
       Int k;
       bool isComp = true;
@@ -492,8 +563,10 @@ int main(int argc, char* argv[]) {
       exit(0);
     } else if (strcmp(argv[a], "-rp") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -rp requires two arguments.\n"); exit(-1); }
       string priv = string(argv[a]);
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -rp requires two arguments.\n"); exit(-1); }
       string file = string(argv[a]);
       a++;
       reconstructAdd(secp,file,outputFile,priv);
@@ -509,80 +582,102 @@ int main(int argc, char* argv[]) {
       a++;
     } else if (strcmp(argv[a], "-g") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -g requires an argument.\n"); exit(-1); }
       getInts("gridSize",gridSize,string(argv[a]),',');
       a++;
     } else if (strcmp(argv[a], "-s") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -s requires an argument.\n"); exit(-1); }
       seed = string(argv[a]);
       a++;
-    } else if (strcmp(argv[a], "-start") == 0) {//Start key
+    } else if (strcmp(argv[a], "-ps") == 0) {
       a++;
-      start_key = string(argv[a]);
-      a++;
-    } else if (strcmp(argv[a], "-bits") == 0) {//Random bits
-      a++;
-      rand_bit = atoi(argv[a]);
-      a++;
-	} else if (strcmp(argv[a], "-level") == 0) {//OpenSSL function case
-      a++;
-      FuncLevel = atoi(argv[a]);
-      a++;
-	} else if (strcmp(argv[a], "-ps") == 0) {
-      a++;
+      if (a >= argc) { fprintf(stderr, "Error: -ps requires an argument.\n"); exit(-1); }
       seed = string(argv[a]);
       paranoiacSeed = true;
       a++;
     } else if (strcmp(argv[a], "-o") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -o requires an argument.\n"); exit(-1); }
       outputFile = string(argv[a]);
       a++;
     } else if (strcmp(argv[a], "-i") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -i requires an argument.\n"); exit(-1); }
       parseFile(string(argv[a]),prefix);
       a++;
     } else if (strcmp(argv[a], "-t") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -t requires an argument.\n"); exit(-1); }
       nbCPUThread = getInt("nbCPUThread",argv[a]);
       a++;
       tSpecified = true;
     } else if (strcmp(argv[a], "-m") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -m requires an argument.\n"); exit(-1); }
       maxFound = getInt("maxFound", argv[a]);
       a++;
     } else if (strcmp(argv[a], "-r") == 0) {
       a++;
+      if (a >= argc) { fprintf(stderr, "Error: -r requires an argument.\n"); exit(-1); }
       rekey = (uint64_t)getInt("rekey", argv[a]);
       a++;
     } else if (strcmp(argv[a], "-h") == 0) {
-      printUsage();
-    } else if (a == argc - 1) {
-      prefix.push_back(string(argv[a]));
-      a++;
-    } else {
-      printf("Unexpected %s argument\n",argv[a]);
-      exit(-1);
+      printUsage(); // This calls exit(0)
+    } else if (strcmp(argv[a], "-bits") == 0) { 
+      a++; // Move to the value
+      if (a >= argc) { fprintf(stderr, "Error: -bits requires an argument (N).\n"); exit(-1); }
+      if (range_specified) { fprintf(stderr, "Error: -bits and -area are mutually exclusive.\n"); exit(-1); }
+      int bits = getInt("bits", argv[a]);
+      if (parseBitRange(bits, &min_range, &max_range) != 0) {
+          exit(-1); // parseBitRange already printed error
+      }
+      range_specified = true;
+      a++; // Move to the next argument
+    } else if (strcmp(argv[a], "-area") == 0) { 
+      a++; // Move to the value
+      if (a >= argc) { fprintf(stderr, "Error: -area requires an argument (A:B).\n"); exit(-1); }
+       if (range_specified) { fprintf(stderr, "Error: -bits and -area are mutually exclusive.\n"); exit(-1); }
+      if (parseHexRange(string(argv[a]), &min_range, &max_range) != 0) {
+           exit(-1); // parseHexRange already printed error
+      }
+      range_specified = true;
+      a++; // Move to the next argument
     }
+    
+    else { // Handle any other unexpected arguments or the final prefix
+       if (a == argc - 1 && prefix.empty() && argv[a][0] != '-') {
+           // This looks like the final prefix argument
+           prefix.push_back(string(argv[a]));
+           a++;
+       } else {
+           // Handle any other unexpected arguments
+           printf("Unexpected %s argument\n",argv[a]);
+           exit(-1);
+       }
+    }
+    // --- 修正结束 ---
 
-  }
-  
-  if (rand_bit > 256){
-	  rand_bit = 256;
-  }
-  if (rand_bit < 20){
-	  rand_bit = 20;
-  }
-  if (FuncLevel < 0){
-	  FuncLevel = 0;
-  }
-  if (FuncLevel > 4){
-	  FuncLevel = 4;
-  }
+  } // <--- **ADD THIS CLOSING BRACE** - while 循环结束
 
-  //printf("VanitySearch v" RELEASE "\n");
-  // Logo 1
-  //printf("[🟑 ]Argv add to -start -bits Cancel SSE");
-  
-    if(gridSize.size()==0) {
+
+  // 范围验证 ---
+  // 确保最终确定的范围是有效的: 1 <= min <= max < N
+  // 1. min_range >= 1
+  // 2. min_range <= max_range
+  // 3. max_range < N_order
+  Int one_int_again((uint64_t)1); // 确保有一个 1 的 Int 对象
+  if (min_range.IsZero() || min_range.IsLower(&one_int_again) || min_range.IsGreater(&max_range) || max_range.IsGreaterOrEqual(&N_order)) {
+       fprintf(stderr, "Fatal Error: Invalid private key range specified or derived [%s, %s]. Must be 1 <= min <= max < N (%s).\n",
+               min_range.GetBase16().c_str(), max_range.GetBase16().c_str(), N_order.GetBase16().c_str());
+       exit(-1);
+  }
+  // --- 结束范围验证 ---
+
+
+  printf("❀  VanitySearch v" RELEASE "\n");
+
+  if(gridSize.size()==0) {
     for (int i = 0; i < gpuId.size(); i++) {
       gridSize.push_back(-1);
       gridSize.push_back(128);
@@ -604,8 +699,11 @@ int main(int argc, char* argv[]) {
     searchMode = (startPubKeyCompressed)?SEARCH_COMPRESSED:SEARCH_UNCOMPRESSED;
   }
 
-  VanitySearch *v = new VanitySearch(secp, prefix, seed, start_key, rand_bit, FuncLevel, searchMode, gpuEnable, stop, outputFile, sse,
-    maxFound, rekey, caseSensitive, startPuKey, paranoiacSeed);
+  // 创建 VanitySearch 对象，传递范围参数
+  VanitySearch *v = new VanitySearch(secp, prefix, seed, searchMode, gpuEnable, stop,
+                                     outputFile, sse, maxFound, rekey, caseSensitive,
+                                     startPuKey, paranoiacSeed, min_range, max_range);
+
   v->Search(nbCPUThread,gpuId,gridSize);
 
   return 0;
