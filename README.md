@@ -7,7 +7,7 @@ I only fixed the following issues:
 2. Fixed the issue where the address was incorrect during puzzle search.
 3. Fixed the issue where vanity address search was also correct, and addresses starting with 1, 3, or bc1 were correctly matched.
 4. Fixed the error in converting the 16-bit private key to a WIF private key.
-5. This issue was fixed by replacing the insecure weak random number generator.
+5. Fixed This issue was fixed by replacing the insecure weak random number generator.
 6. Added a feature to divide the private key area for puzzle puzzles, adding -r to regenerate random numbers when the specified private key area reaches a certain quantity, improving the probability of puzzle hits. The more random, the slower (the smaller the value after -r, the slower),and this program or other programs can only use point addition ECC high-speed calculations, not normal standard calculations.
 
 
@@ -74,7 +74,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 --------------------------------------------------------------------------------------------------------------
 
  
-```
+
 ---------------------------------------------------------------------------------------------------------------------
 # GPU CPU Vanity Address and Jigsaw Puzzle Instances
 
@@ -111,6 +111,20 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ❀  GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
 ❀  [3532.10 Mkey/s][GPU 3529.02 Mkey/s][Total 2^38.25][Prob 0.0%][50% in 9.09462e+30y][Rekey 0][Found 0]  ^C
 
+./VanitySearch -t 0 -gpu -gpuId 0 -area 400000000000000000:7fffffffffffffffff -r 999999 1PWo3JeB9jrGw
+❀  VanitySearch v2.0
+❀  Check: No -o output file. Will save 'Results.txt'
+❀  Difficulty: 10054102514374868992
+❀  Search: 1Veryfierce [Compressed]
+❀  Start Sat May 17 05:21:06 2025
+❀  Random mode
+❀  Rekey every: 999999 Mkeys
+❀  Range
+❀  from : 0x400000000000000000
+❀  to   : 0x7FFFFFFFFFFFFFFFFF
+❀  Number of CPU thread: 0
+❀  GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
+❀  [3529.00 Mkey/s][GPU 3529.00 Mkey/s][Total 2^37.49][Prob 0.0%][50% in 62.6197y][Rekey 0][Found 0]  ^C
 
 
 ./VanitySearch -stop -t 4 -gpu -bits 38 -r 50000 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
@@ -132,6 +146,34 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ✿  KEY: 0x22382FACD0
 
 
+./VanitySearch -t 0 -gpu -gpuId 0 -r 8891689 18891689
+❀  VanitySearch v2.0
+❀  Check: No -o output file. Will save 'Results.txt'
+❀  Difficulty: 888446610539
+❀  Search: 18891689 [Compressed]
+❀  Start Sat May 17 05:27:56 2025
+❀  Random mode
+❀  Rekey every: 8891689 Mkeys
+❀  Range
+❀  from : 0x1
+❀  to   : 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140
+❀  Number of CPU thread: 0
+❀  GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
+❀  [3502.31 Mkey/s][GPU 3502.31 Mkey/s][Total 2^37.85][Prob 24.3%][50% in 00:01:45][Rekey 0][Found 0]  
+✿  Add: 18891689DmVW4NwCWrs9pDg8ML9WNH8iSy
+✿  WIF: p2pkh:L2km6Bqw7FG3KZQr87atDNNjUEw4QrqUARj9ym6YPpZCERyqwD1r
+✿  KEY: 0xA5290B57B705CE014C9992754893FA86C76DDF646D4BA7B0B52FAF3E42F975F0
+❀  [3525.58 Mkey/s][GPU 3525.58 Mkey/s][Total 2^40.05][Prob 72.3%][80% in 00:01:23][Rekey 0][Found 1]  
+✿  Add: 18891689PQsZH8Y4CUqBfHCMSBr8eTxx6F
+✿  WIF: p2pkh:L4PvBFTeedgr5nv445qDThuooykJQ5Njo79dnRg4pd499i7TkVNM
+✿  KEY: 0xD61CCEA13142CD65A8106A4805E66B5A2BB21D7146E111DB8A8BF6505F16241B
+❀  [3525.57 Mkey/s][GPU 3525.57 Mkey/s][Total 2^40.62][Prob 85.1%][90% in 00:01:41][Rekey 0][Found 2]  
+✿  Add: 18891689uUPn46wojBoJPR29KTyQ5FKJ3e
+✿  WIF: p2pkh:KyS3ocNPL9qXWfWUV2oQ6KtUmdgKMQLT9z7A5wkXGMMoHgvgBe8w
+✿  KEY: 0x4205A646C594E9460D5028F7EC210E81FE1614BCDCBB9252D4F01BDDAD02507C
+❀  [3575.56 Mkey/s][GPU 3575.56 Mkey/s][Total 2^40.65][Prob 85.6%][90% in 00:01:33][Rekey 0][Found 3]  ^C
+
+
 Please note that single CPU calculation will result in an error. You can only use GPU and CPU, or run with GPU alone. We will fix single CPU operation when we have time.For those who do not want to run the jigsaw puzzle game, or do not have a limited area search, please use my V1.0 version, which contains the repaired original version.
 
 ```
@@ -140,7 +182,7 @@ The results are saved to Results.txt by default
 
 # The original version has been repaired, and you can use the original version to search for Vanity addresses. It has been slightly optimized and the speed is still quite fast, and you don’t have to rely on the library.
 ```
-/VanitySearch -stop -t 0 -gpu bc1qmqzlduj
+./VanitySearch -stop -t 0 -gpu bc1qmqzlduj
 VanitySearch v1.19
 Difficulty: 34359738368
 Search: bc1qmqzlduj [Compressed]
@@ -152,6 +194,13 @@ GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
 PubAddress: bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
 Priv (WIF): p2wpkh:L3uDSAXcFB2YnPQ2upSgAyeurAks7TWaR5rebduQp5ZbxuC1aLWB
 Priv (HEX): 0xC758CE0B8BF098097A44D54BAC137E96EC3C4ABBA1D943ABBCC87C17C4E8A286
+
+./VanitySearch -cp C758CE0B8BF098097A44D54BAC137E96EC3C4ABBA1D943ABBCC87C17C4E8A286
+PrivAddr: p2pkh:L3uDSAXcFB2YnPQ2upSgAyeurAks7TWaR5rebduQp5ZbxuC1aLWB
+PubKey: 0369B34E4D57F230A63D1FCD389F0ED85FC9A94C167DA5D4F523BAF3D6663835FC
+Addr (P2PKH): 1LhE6sCY97uMAiF28MiT4BikaUPJin5Zip
+Addr (P2SH): 3N9FcVopVd2oP5QxQRwGYPNHyEWZmpfQzh
+Addr (BECH32): bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
 
 ```
 
