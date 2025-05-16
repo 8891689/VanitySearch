@@ -13,8 +13,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ 
+ * Copyright (c) 2025 8891689
+ * https://github.com/8891689
+ * This code file contains modifications of the original work (Copyright (c) 2019 Jean Luc PONS).
 */
-
 // Big integer class (Fixed size)
 
 #ifndef BIGINTH
@@ -25,27 +28,35 @@
 #include <inttypes.h>
 
 // We need 1 extra block for Knuth div algorithm , Montgomery multiplication and ModInv
-#define BISIZE 256
+#define BISIZE 256 
 
 #if BISIZE==256
-  #define NB64BLOCK 5
-  #define NB32BLOCK 10
+  #define NB64BLOCK_P 5  
+  #define NB32BLOCK_P 10 
 #elif BISIZE==512
-  #define NB64BLOCK 9
-  #define NB32BLOCK 18
+  #define NB64BLOCK_P 9  
+  #define NB32BLOCK_P 18 
 #else
-  #error Unsuported size
+  #error Unsuported size 
 #endif
+
 
 class Int {
 
 public:
 
+  // 保留這裡的靜態常量成員定義，用於 C++ 程式碼
+  static const int NB64BLOCK = (BISIZE / 64) + 1; // 這會是 5 或 9
+  static const int NB32BLOCK = NB64BLOCK * 2;   // 這會是 10 或 18
+
   Int();
   Int(int64_t i64);
   Int(uint64_t u64);
   Int(Int *a);
+  
+  Int(const Int& a);
 
+  void Set(const Int& a);
   // Op
   void Add(uint64_t a);
   void Add(Int *a);
@@ -94,7 +105,7 @@ public:
   bool IsOdd();
   bool IsProbablePrime();
 
-
+  bool RandRange(const Int& min, const Int& max, const Int& order);
   double ToDouble();
 
   // Modular arithmetic
@@ -271,39 +282,36 @@ static void inline imm_mul(uint64_t *x, uint64_t y, uint64_t *dst) {
 
 }
 
+// 修改輔助函數或宏中的 #if 判斷，使用 NB64BLOCK_P
 static void inline imm_umul(uint64_t *x, uint64_t y, uint64_t *dst) {
-
-  // Assume that x[NB64BLOCK-1] is 0
   unsigned char c = 0;
   uint64_t h, carry;
   dst[0] = _umul128(x[0], y, &h); carry = h;
   c = _addcarry_u64(c, _umul128(x[1], y, &h), carry, dst + 1); carry = h;
   c = _addcarry_u64(c, _umul128(x[2], y, &h), carry, dst + 2); carry = h;
   c = _addcarry_u64(c, _umul128(x[3], y, &h), carry, dst + 3); carry = h;
-#if NB64BLOCK > 5
+#if NB64BLOCK_P > 5 // <--- 在這裡使用預處理器宏 NB64BLOCK_P
   c = _addcarry_u64(c, _umul128(x[4], y, &h), carry, dst + 4); carry = h;
   c = _addcarry_u64(c, _umul128(x[5], y, &h), carry, dst + 5); carry = h;
   c = _addcarry_u64(c, _umul128(x[6], y, &h), carry, dst + 6); carry = h;
   c = _addcarry_u64(c, _umul128(x[7], y, &h), carry, dst + 7); carry = h;
 #endif
-  _addcarry_u64(c, 0ULL, carry, dst + (NB64BLOCK - 1));
-
+  _addcarry_u64(c, 0ULL, carry, dst + (Int::NB64BLOCK - 1)); // <--- 在 C++ 程式碼中使用 Int::NB64BLOCK
 }
 
+// 修改 shiftR 的 #if 判斷
 static void inline shiftR(unsigned char n, uint64_t *d) {
-
   d[0] = __shiftright128(d[0], d[1], n);
   d[1] = __shiftright128(d[1], d[2], n);
   d[2] = __shiftright128(d[2], d[3], n);
   d[3] = __shiftright128(d[3], d[4], n);
-#if NB64BLOCK > 5
+#if NB64BLOCK_P > 5 // <--- 在這裡使用預處理器宏 NB64BLOCK_P
   d[4] = __shiftright128(d[4], d[5], n);
   d[5] = __shiftright128(d[5], d[6], n);
   d[6] = __shiftright128(d[6], d[7], n);
   d[7] = __shiftright128(d[7], d[8], n);
 #endif
-  d[NB64BLOCK-1] = ((int64_t)d[NB64BLOCK-1]) >> n;
-
+  d[Int::NB64BLOCK-1] = ((int64_t)d[Int::NB64BLOCK-1]) >> n; // <--- 在 C++ 程式碼中使用 Int::NB64BLOCK
 }
 
 static void inline shiftL(unsigned char n, uint64_t *d) {
