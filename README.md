@@ -242,6 +242,17 @@ Year
 21225.924
 
 
+Old Version Speed
+
+Explorer
+GPU: 1x RTX 3090
+Speed: up to 2,000 MKeys/s
+$0.50/hr
+Seeker
+GPU: 1x RTX 4090
+Speed: up to 4,000 MKeys/s
+$0.90/hr
+
 ----------------------------------------------------------------------------------------------------------------
 
 Check Bits: 28 \
