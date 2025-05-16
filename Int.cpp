@@ -13,14 +13,18 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ 
+ * Copyright (c) 2025 8891689
+ * https://github.com/8891689
+ * This code file contains modifications of the original work (Copyright (c) 2019 Jean Luc PONS).
 */
-
 #include "Int.h"
 #include "IntGroup.h"
 #include <string.h>
 #include <math.h>
 #include <emmintrin.h>
 #include "Timer.h"
+
 
 #define MAX(x,y) (((x)>(y))?(x):(y))
 #define MIN(x,y) (((x)<(y))?(x):(y))
@@ -29,6 +33,60 @@ Int _ONE((uint64_t)1);
 
 
 // ------------------------------------------------
+
+// Implement the new RandRange method
+bool Int::RandRange(const Int& min, const Int& max, const Int& order) {
+    // Create non-const copies to perform calculations if needed
+    Int min_copy = min; // Uses copy constructor Int(const Int&)
+    Int max_copy = max; // Uses copy constructor Int(const Int&)
+    Int order_copy = order; // Uses copy constructor Int(const Int&)
+
+    // Calculate the size of the range: range_size = max - min + 1
+    Int range_size;
+    // Call Sub using pointers to the non-const copies
+    range_size.Sub(&max_copy, &min_copy); // range_size = max_copy - min_copy
+    range_size.AddOne(); // range_size = (max - min) + 1
+    Int one; one.SetInt32(1);
+     if (range_size.IsZero() || range_size.IsNegative() || range_size.IsLower(&one) ) {
+         this->SetInt32(0);
+         return false;
+     }
+
+
+    // Generate a random offset: 0 <= offset < range_size
+    Int offset;
+    // Call Rand(Int*) using pointer to the non-const range_size
+    offset.Rand(&range_size); // offset will be in [0, range_size - 1]
+
+    // The result is min + offset
+    // Set this to min (uses Set(const Int&))
+    this->Set(min);
+    // Add the offset (Add(Int*))
+    this->Add(&offset);
+
+
+    // Final sanity check
+    // Call comparison functions using pointers to the non-const copies
+    // and the non-const 'this' object.
+    if (this->IsLower(&min_copy) || this->IsGreater(&max_copy) || this->IsZero() || this->IsGreaterOrEqual(&order_copy)) {
+         this->SetInt32(0);
+         return false;
+    }
+
+    return true; // Successfully generated a key in the range
+}
+
+// Implement the const copy constructor
+Int::Int(const Int& a) {
+    Set(a); // Call the Set(const Int&) method
+}
+
+// Implement the Set from const Int reference method
+void Int::Set(const Int& a) {
+   for (int i = 0; i < NB64BLOCK; i++) {
+       bits64[i] = a.bits64[i];
+   }
+}
 
 Int::Int() {
 }
@@ -766,7 +824,7 @@ void Int::Abs() {
 }
 
 // ------------------------------------------------
-/*
+
 void Int::Rand(int nbit) {
 
 	CLEAR();
@@ -779,28 +837,6 @@ void Int::Rand(int nbit) {
 	for(;i<nb;i++)
 		bits[i]=rndl();
 	bits[i]=rndl()&mask;
-
-}
-*/
-// ------------------------------------------------
-
-void Int::Rand(int nbit) {
-
-	CLEAR();
-
-	uint32_t nb = nbit/64;//uint32_t nb = nbit/32;
-	uint32_t leftBit = nbit%64;//uint32_t leftBit = nbit%32;
-	uint64_t mask = 1;//uint32_t mask = 1;
-	mask = (mask << leftBit) - 1;
-	uint32_t i=0;
-	//for(;i<nb;i++)
-		//bits64[i]=rndll();//bits[i]=rndl();
-	//bits64[i]=rndll() & mask;//bits[i]=rndl()&mask;
-	unsigned long long rb[4];
-	rnd256(rb);
-	for(;i<nb;i++)
-		bits64[i]=rb[i];
-	bits64[i]=rb[i] & mask;
 
 }
 
