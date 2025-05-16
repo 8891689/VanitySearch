@@ -13,6 +13,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ 
+ * Copyright (c) 2025 8891689
+ * https://github.com/8891689
+ * This code file contains modifications of the original work (Copyright (c) 2019 Jean Luc PONS).
 */
 #include "Vanity.h"
 #include "Base58.h"
@@ -30,103 +34,48 @@
 #include <pthread.h>
 #endif
 
-// add openssl
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ec.h>
-#include <openssl/rand.h>
-#include <openssl/pem.h>
-#include <openssl/ripemd.h>
-#define ECCTYPE "secp256k1"
-//
-
-// 添加这三行
-#include <array>
-#include <memory>
-#include <stdexcept>
+#include <iostream> // for std::cout
+#include <iomanip>  // for std::setw, std::setfill
+#include <sstream> // for std::stringstream
 
 using namespace std;
 
 Point Gn[CPU_GRP_SIZE / 2];
 Point _2Gn;
 
+const std::string DEFAULT_OUTPUT_FILENAME = "Results.txt";
 // ----------------------------------------------------------------------------
 
-VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, string seed, string start_key, int Random_bit, int FuncLevel, int searchMode,
-	bool useGpu, bool stop, string outputFile, bool useSSE, uint32_t maxFound,
-	uint64_t rekey, bool caseSensitive, Point &startPubKey, bool paranoiacSeed)
-	:inputPrefixes(inputPrefixes) {
+// 构造函数实现
+VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, std::string seed, int searchMode,
+                           bool useGpu, bool stop, std::string userOutputFile, bool useSSE, uint32_t maxFound, // 將參數名改為 userOutputFile 以示區分
+                           uint64_t rekey, bool caseSensitive, Point &startPubKey, bool paranoiacSeed,
+                           const Int& min_r, const Int& max_r)
+  :inputPrefixes(inputPrefixes), min_range(min_r), max_range(max_r)
+{
+  this->secp = secp;
+  this->searchMode = searchMode;
+  this->useGpu = useGpu;
+  this->stopWhenFound = stop;
+  this->rekeyCount = 0;
 
-	this->secp = secp;
-	this->searchMode = searchMode;
-	this->useGpu = useGpu;
-	this->stopWhenFound = stop;
-	this->outputFile = outputFile;
-	this->useSSE = useSSE;
-	this->nbGPUThread = 0;
-	this->maxFound = maxFound;
-	this->rekey = rekey;
-	this->searchType = -1;
-	this->startPubKey = startPubKey;
-	this->hasPattern = false;
-	this->caseSensitive = caseSensitive;
-	this->startPubKeySpecified = !startPubKey.isZero();
-	this->Random_bits = Random_bit;
-	this->FunctionLevel = FuncLevel;
+  // 決定最終的輸出檔案名
+  if (userOutputFile.empty()) {
+    this->outputFile = DEFAULT_OUTPUT_FILENAME; // 使用預設檔名
+    printf("❀  Check: No -o output file. Will save '%s'\n", this->outputFile.c_str());
+  } else {
+    this->outputFile = userOutputFile; // 使用使用者指定的檔名
+  }
 
-	//
-	bool all_algorithms_fl = false;// = true;
-	bool screen_fl = false;// = true;
-	bool start_seed_fl = false;// = true;
-	keys_seed_fl = false;
-
-	if (FunctionLevel >= 1){
-		all_algorithms_fl = true;
-	}
-	if (FunctionLevel >= 2){
-		screen_fl = true;
-	}
-	if (FunctionLevel >= 3){
-		start_seed_fl = true;
-	}
-	if (FunctionLevel >= 4){
-		keys_seed_fl = true;
-	}
-
-	// openssl
-	if(all_algorithms_fl){
-		OpenSSL_add_all_algorithms();// OpenSSL initialization code
-	}
-	//EVP_cleanup(); The not used //OpenSSL cleanup code
-	//static EC_KEY *myecc = NULL;
-	//myecc = EC_KEY_new_by_curve_name(OBJ_txt2nid(ECCTYPE));
-
-	// Logo 2
-/*#ifndef WIN64
-    // 使用 popen 捕获 openssl version -v 的输出
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("openssl version -v", "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-
-    // 在输出前加上 [🟑 ]
-    if (!result.empty()) {
-       printf(" \n");
-       printf("[🟑 ]%s", result.c_str());
-       
-    }
-#endif
-*/       
-        printf("[🟑 ]OpenSSL level %d\n", FunctionLevel);
-	// Seed random number generator with performance counter
-	if (start_seed_fl) {
-             //RandAddSeed();
-	}
+  this->useSSE = useSSE;
+  this->nbGPUThread = 0;
+  this->maxFound = maxFound;
+  this->rekey = rekey;
+  this->searchType = -1;
+  this->startPubKey = startPubKey;
+  this->hasPattern = false;
+  this->caseSensitive = caseSensitive;
+  this->startPubKeySpecified = !startPubKey.isZero();
 
   lastRekey = 0;
   prefixes.clear();
@@ -172,11 +121,7 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
         for (int j = 0; j < (int)subList.size(); j++) {
           if (initPrefix(subList[j], &it)) {
             it.found = found;
-			#ifdef WIN64
-				it.prefix = _strdup(it.prefix); // We need to allocate here, subList will be destroyed
-			#else
-				it.prefix = strdup(it.prefix); // We need to allocate here, subList will be destroyed
-			#endif
+            it.prefix = strdup(it.prefix); // We need to allocate here, subList will be destroyed
             itPrefixes.push_back(it);
           }
         }
@@ -290,17 +235,17 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
     if (nbPrefix == 1) {
       if (!caseSensitive) {
         // Case unsensitive search
-        printf("[🟑 ]Difficulty: %.0f\n", _difficulty);
-        printf("Search: %s [%s, Case unsensitive] (Lookup size %d)\n", inputPrefixes[0].c_str(), seachInfo.c_str(), unique_sPrefix);
+        printf("❀  Difficulty: %.0f\n", _difficulty);
+        printf("❀  Search: %s [%s, Case unsensitive] (Lookup size %d)\n", inputPrefixes[0].c_str(), seachInfo.c_str(), unique_sPrefix);
       } else {
-        printf("[🟑 ]Difficulty: %.0f\n", _difficulty);
-        printf("[🟑 ]Search: %s [%s]\n", inputPrefixes[0].c_str(), seachInfo.c_str());
+        printf("❀  Difficulty: %.0f\n", _difficulty);
+        printf("❀  Search: %s [%s]\n", inputPrefixes[0].c_str(), seachInfo.c_str());
       }
     } else {
       if (onlyFull) {
-        printf("[🟑 ]Search: %d addresses (Lookup size %d,[%d,%d]) [%s]\n", nbPrefix, unique_sPrefix, minI, maxI, seachInfo.c_str());
+        printf("❀  Search: %d addresses (Lookup size %d,[%d,%d]) [%s]\n", nbPrefix, unique_sPrefix, minI, maxI, seachInfo.c_str());
       } else {
-        printf("[🟑 ]Search: %d prefixes (Lookup size %d) [%s]\n", nbPrefix, unique_sPrefix, seachInfo.c_str());
+        printf("❀  Search: %d prefixes (Lookup size %d) [%s]\n", nbPrefix, unique_sPrefix, seachInfo.c_str());
       }
     }
 
@@ -328,9 +273,9 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
 
     string searchInfo = string(searchModes[searchMode]) + (startPubKeySpecified ? ", with public key" : "");
     if (inputPrefixes.size() == 1) {
-      printf("Search: %s [%s]\n", inputPrefixes[0].c_str(), searchInfo.c_str());
+      printf("❀  Search: %s [%s]\n", inputPrefixes[0].c_str(), searchInfo.c_str());
     } else {
-      printf("Search: %d patterns [%s]\n", (int)inputPrefixes.size(), searchInfo.c_str());
+      printf("❀  Search: %d patterns [%s]\n", (int)inputPrefixes.size(), searchInfo.c_str());
     }
 
     patternFound = (bool *)malloc(inputPrefixes.size()*sizeof(bool));
@@ -356,11 +301,10 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
   // beta^3 = 1 mod p implies also beta^2 = beta^-1 mop (by multiplying both side by beta^-1)
   // (beta^3 = 1 mod p),  beta2 = beta^-1 = beta^2
   // (lambda^3 = 1 mod n), lamba2 = lamba^-1 = lamba^2
-  // Disable endomorphism
-  //beta.SetBase16("7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee");
-  //lambda.SetBase16("5363ad4cc05c30e0a5261c028812645a122e22ea20816678df02967c1b23bd72");
-  //beta2.SetBase16("851695d49a83f8ef919bb86153cbcb16630fb68aed0a766a3ec693d68e6afa40");
-  //lambda2.SetBase16("ac9c52b33fa3cf1f5ad9e3fd77ed9ba4a880b9fc8ec739c2e0cfc810b51283ce");
+  beta.SetBase16("7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee");
+  lambda.SetBase16("5363ad4cc05c30e0a5261c028812645a122e22ea20816678df02967c1b23bd72");
+  beta2.SetBase16("851695d49a83f8ef919bb86153cbcb16630fb68aed0a766a3ec693d68e6afa40");
+  lambda2.SetBase16("ac9c52b33fa3cf1f5ad9e3fd77ed9ba4a880b9fc8ec739c2e0cfc810b51283ce");
 
   // Seed
   if (seed.length() == 0) {
@@ -379,37 +323,46 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes, 
     (const uint8_t *)salt.c_str(), salt.length(),
     2048);
   startKey.SetInt32(0);
-  //sha256(hseed, 64, (unsigned char *)startKey.bits64);
-
-  //Set startKey from start_key
-  startKey.Rand(Random_bits);// bits 66
-
-  if (start_key.length() > 1) { //if (1) {
-	  if (start_key.length() != 64) {
-		  //printf("PrivKeyHex: Error invalid privkey specified (64 character length)\n");
-		  printf("StartKeyHex: Error invalid privkey specified (64 character length)\r");
-		  exit(-1);
-	  }
-	  for (int i = 0; i < 32; i++) {
-		  unsigned char my1ch = 0;
-		  sscanf(&start_key[2 * i], "%02X", &my1ch);
-		  startKey.SetByte(31 - i, my1ch);
-	  }
-  }
-  // end Set startKey
-
-  char *ctimeBuff;
-  time_t now = time(NULL);
-  ctimeBuff = ctime(&now);
-  printf("[🟑 ]Start %s", ctimeBuff);
-
-  if (rekey > 0) {
-    printf("[🟑 ]Base Key: Randomly changed every %.0f Mkeys\n",(double)rekey);
-  } else {
-    printf("[🟑 ]Base Key: %s\n", startKey.GetBase16().c_str());
-  }
-
+  sha256(hseed, 64, (unsigned char *)startKey.bits64);
+// --- 檢查初始 startKey 是否在指定範圍內 (當 rekey == 0 時) ---
+// 如果指定了範圍，並且不是 rekey 模式，檢查通過種子生成的起始密钥是否在範圍內
+if (rekey == 0) { // 如果是 rekey > 0，這裡的 startKey 只是第一次 rekey 的隨機起點，後面會重新生成
+   // 驗證 startKey 是否在 [min_range, max_range] 且非零
+   // startKey 必須小於曲線階數 N
+   Int one((uint64_t)1);
+   if (startKey.IsZero() || startKey.IsLower(&min_range) || startKey.IsGreater(&max_range) || startKey.IsGreaterOrEqual(&secp->order) ) {
+       fprintf(stderr, "Error: Initial key derived from seed (0x%s) is outside the specified range [0x%s, 0x%s] or invalid.\n", // 打印為 0x 前綴更清晰
+               startKey.GetBase16().c_str(), min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+       fprintf(stderr, "For searching a restricted range deterministically (rekey=0), the seed must yield a key within that range.\n");
+       fprintf(stderr, "Consider using rekey > 0 to sample randomly from the range.\n");
+       exit(-1); // 致命錯誤，退出
+   }
 }
+// --- 結束檢查 ---
+
+char *ctimeBuff;
+time_t now = time(NULL);
+ctimeBuff = ctime(&now);
+printf("❀  Start %s", ctimeBuff); // ctime() 返回的字符串末尾已經有 '\n'
+
+// 1. 啟用隨機模式 / 確定性模式
+if (rekey > 0) {
+    printf("❀  Random mode\n");
+    // 2. 多少私鑰匙隨機一次 (僅在隨機模式下打印)
+    printf("❀  Rekey every: %.0f Mkeys\n", (double)rekey);
+} else {
+    printf("❀  Deterministic mode (from seed)\n");
+    // 在確定性模式下，可以打印由種子生成的起始 startKey
+    printf("❀  Initial key: 0x%s\n", startKey.GetBase16().c_str());
+}
+// 打印範圍信息
+printf("❀  Range\n");
+// 3. 範圍開始
+printf("❀  from : 0x%s\n", min_range.GetBase16().c_str());
+// 4. 範圍結束
+printf("❀  to   : 0x%s\n", max_range.GetBase16().c_str());
+
+} // 函數結束
 
 // ----------------------------------------------------------------------------
 
@@ -583,13 +536,13 @@ bool VanitySearch::initPrefix(std::string &prefix,PREFIX_ITEM *it) {
     if (searchType == P2SH) {
       if (result.data()[0] != 5) {
         if(caseSensitive)
-          printf("Ignoring prefix \"%s\" (Unreachable, 31h1 to 3R2c only)\r", prefix.c_str());
+          printf("Ignoring prefix \"%s\" (Unreachable, 31h1 to 3R2c only)\n", prefix.c_str());
         return false;
       }
     }
 
     if (result.size() != 25) {
-      printf("Ignoring prefix \"%s\" (Invalid size)\r", prefix.c_str());
+      printf("Ignoring prefix \"%s\" (Invalid size)\n", prefix.c_str());
       return false;
     }
 
@@ -758,108 +711,84 @@ string VanitySearch::GetExpectedTime(double keyRate,double keyCount) {
 
 // ----------------------------------------------------------------------------
 
-void VanitySearch::output(string addr,string pAddr,string pAddrHex) {
+void VanitySearch::output(std::string addr, std::string pAddr, std::string pAddrHex) {
 
 #ifdef WIN64
-   WaitForSingleObject(ghMutex,INFINITE);
+   WaitForSingleObject(ghMutex, INFINITE);
 #else
   pthread_mutex_lock(&ghMutex);
 #endif
 
-  FILE *f = stdout;
-  bool needToClose = false;
-
-  outputFile = "Found.txt";// Fix name // NOTE: This line forces output to "Found.txt" even if outputFile was empty
-
-  // Let's change the logic slightly to respect if outputFile was *not* specified initially
-  // Check if outputFile was originally empty or is now forced to "Found.txt"
-  // Let's assume if the original outputFile was empty, we print to console AND "Found.txt"
-  // If original outputFile was specified, we print to that file only.
-  // If you *only* want to print to console when outputFile is empty, keep the original logic but remove the "Found.txt" assignment here.
-  // Based on the original code, it seems it always tries to write to "Found.txt".
-  // Let's make it print to console *in addition* to "Found.txt"
-
-  // If we reach here, a key was found. We should always print to console.
-  printf("\n"); // Print a newline before the output block for clarity
-
-  printf("[🟐 ]Add: %s\n", addr.c_str()); // Print Address to console
-
+  // --- 準備要輸出的內容 ---
+  // 為了避免重複格式化，我們先把內容格式化到一個字符串緩衝區
+  // 或者，我們可以多次調用 fprintf/printf，但要注意內容一致性
+  // 這裡選擇多次調用，因為內容格式相對固定
+  
+  // --- 始終打印到控制台 ---
+  printf("\n"); // 加一個換行，讓控制台輸出更清晰
+  printf("✿  Add: %s\n", addr.c_str());
   if (startPubKeySpecified) {
-    printf("[🟐 ]Key: %s\n", pAddr.c_str()); // Print Public Key (if searching with public key) to console
-  } else {
-    // Print WIF and Hex Private Key to console
-    switch (searchType) {
-    case P2PKH:
-      printf("[🟐 ]WIF: %s\n", pAddr.c_str());
-      break;
-    case P2SH:
-      printf("[🟐 ]WIF: %s\n", pAddr.c_str());
-      break;
-    case BECH32:
-      printf("[🟐 ]WIF: %s\n", pAddr.c_str());
-      break;
-    }
-    printf("[🟐 ]Key: 0x%s\n", pAddrHex.c_str()); // Print Hex Private Key to console
-  }
-
-
-  // Now handle file output
-  // Re-evaluate file handling based on original intent and your desire.
-  // The line `outputFile = "Found.txt";` *always* sets the output file.
-  // Let's keep this simple: The `output` function will *always* print to console
-  // (as modified above) and *always* attempt to write to "Found.txt".
-  // This is consistent with the original file output logic.
-
-  f = fopen(outputFile.c_str(), "a+"); // Use a+ mode to create if not exists and append
-  if (f == NULL) {
-    // If file opening fails, print a warning but continue printing to console (which we already did)
-    printf("Cannot open %s for writing\n", outputFile.c_str());
-    // f remains stdout in the original logic if fopen fails, but we already printed to stdout.
-    // We can simply return here or set f back to stdout if we wanted to use fprintf for console too.
-    // Given the current structure, it's clearer to printf to console first, then fprintf to file.
-    // So, if fopen fails, just release mutex and return.
-#ifdef WIN64
-    ReleaseMutex(ghMutex);
-#else
-    pthread_mutex_unlock(&ghMutex);
-#endif
-    return; // Exit the function as file output failed
-  } else {
-    needToClose = true;
-  }
-
-
-  // Write to file (this part remains mostly the same as your original code)
-  // We use fprintf with the file pointer 'f'
-
-    fprintf(f, "Add: %s\n", addr.c_str());
-
-  if (startPubKeySpecified) {
-    fprintf(f, "Key: %s\n", pAddr.c_str()); // pAddr here is the pubkey string
+    printf("✿  KEY: %s\n", pAddr.c_str());
   } else {
     switch (searchType) {
     case P2PKH:
-      fprintf(f, "WIF: %s\n", pAddr.c_str()); // pAddr here is the WIF string
+      printf("✿  WIF: p2pkh:%s\n", pAddr.c_str());
       break;
     case P2SH:
-      fprintf(f, "WIF: %s\n", pAddr.c_str()); // pAddr here is the WIF string
+      printf("✿  WIF: p2wpkh-p2sh:%s\n", pAddr.c_str());
       break;
     case BECH32:
-      fprintf(f, "WIF: %s\n", pAddr.c_str()); // pAddr here is the WIF string
+      printf("✿  WIF: p2wpkh:%s\n", pAddr.c_str());
+      break;
+    default:
+      printf("✿  WIF: unknown_type:%s\n", pAddr.c_str());
       break;
     }
-    fprintf(f, "Key: 0x%s\n", pAddrHex.c_str()); // pAddrHex is the Hex private key string
+    printf("✿  KEY: 0x%s\n", pAddrHex.c_str());
   }
+  fflush(stdout); // 確保控制台輸出立即顯示
 
-  if(needToClose)
-    fclose(f);
+  // --- 如果指定了文件，則同時打印到文件 ---
+  if (!this->outputFile.empty()) { // this->outputFile 是由構造函數設置的最終文件名
+    FILE *f = fopen(this->outputFile.c_str(), "a"); // 追加模式
+    if (f != NULL) {
+      // 成功打開文件，寫入內容
+      fprintf(f, "✿  Add: %s\n", addr.c_str());
+      if (startPubKeySpecified) {
+        fprintf(f, "✿  KEY: %s\n", pAddr.c_str());
+      } else {
+        switch (searchType) {
+        case P2PKH:
+          fprintf(f, "✿  WIF: p2pkh:%s\n", pAddr.c_str());
+          break;
+        case P2SH:
+          fprintf(f, "✿  WIF: p2wpkh-p2sh:%s\n", pAddr.c_str());
+          break;
+        case BECH32:
+          fprintf(f, "✿  WIF: p2wpkh:%s\n", pAddr.c_str());
+          break;
+        default:
+          fprintf(f, "✿  WIF: unknown_type:%s\n", pAddr.c_str());
+          break;
+        }
+        fprintf(f, "✿  KEY: 0x%s\n", pAddrHex.c_str());
+      }
+      fprintf(f, "\n"); // 在文件中每條記錄後加一個額外換行，方便閱讀
+      fflush(f);     // 確保內容寫入文件
+      fclose(f);     // 關閉文件
+    } else {
+      // 文件打開失敗，在控制台打印錯誤信息（之前可能已經打印過，但這裡可以再提示一次）
+      // 已經在控制台打印過主要內容了，所以這裡只打印文件錯誤
+      printf("Error: Could not write to output file '%s'. Error: %s\n",
+             this->outputFile.c_str(), strerror(errno));
+    }
+  }
 
 #ifdef WIN64
   ReleaseMutex(ghMutex);
 #else
   pthread_mutex_unlock(&ghMutex);
 #endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -909,7 +838,7 @@ void VanitySearch::updateFound() {
 
 bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomorphism, bool mode) {
 
-  Int k = key;
+  Int k(&key);
   Point sp = startPubKey;
 
   if (incr < 0) {
@@ -921,105 +850,194 @@ bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomor
     k.Add((uint64_t)incr);
   }
 
+  // Endomorphisms
+  switch (endomorphism) {
+  case 1:
+    k.ModMulK1order(&lambda);
+    if(startPubKeySpecified) sp.x.ModMulK1(&beta);
+    break;
+  case 2:
+    k.ModMulK1order(&lambda2);
+    if (startPubKeySpecified) sp.x.ModMulK1(&beta2);
+    break;
+  }
+
   // Check addresses
   Point p = secp->ComputePublicKey(&k);
   if (startPubKeySpecified) p = secp->AddDirect(p, sp);
-  string chkAddr = secp->GetAddress(searchType, mode, p); // 生成的完整地址是 chkAddr
 
-  // --- 原始的调试输出已移除 ---
-  //printf("\nPrivate Key (HEX): %s\n", k.GetBase16().c_str());
-  //printf("Target Address Prefix: %s\n", addr.c_str());
-  // --- 调试输出结束 ---
+  string chkAddr = secp->GetAddress(searchType, mode, p);
+  if (chkAddr != addr) {
 
+    //Key may be the opposite one (negative zero or compressed key)
+    k.Neg();
+    k.Add(&secp->order);
+    p = secp->ComputePublicKey(&k);
+    if (startPubKeySpecified) {
+      sp.y.ModNeg();
+      p = secp->AddDirect(p, sp);
+    }
+    string chkAddr = secp->GetAddress(searchType, mode, p);
+    if (chkAddr != addr) {
+      printf("\nWarning, wrong private key generated !\n");
+      printf("  Addr :%s\n", addr.c_str());
+      printf("  Check:%s\n", chkAddr.c_str());
+      printf("  Endo:%d incr:%d comp:%d\n", endomorphism, incr, mode);
+      return false;
+    }
 
-  if (strncmp(chkAddr.c_str(), addr.c_str(), addr.length()) != 0) {
-       // This block handles the warning case if a key *doesn't* match the prefix
-       // (Ideally shouldn't happen if logic is perfectly correct, but good for debugging potential issues)
-       printf("\n"); // Add newline before warning
-       printf("\nWarning, wrong private key generated !\n"); // Double newline intentional in original
-       printf("[🟐 ]Add:%s\n", addr.c_str()); // Target Address Prefix
-       printf("[🟐 ]Check:%s\n", chkAddr.c_str()); // Generated Address
-       printf("[🟐 ]Key:%s \n", k.GetBase16().c_str()); // Generated Hex Key
-
-       // Add WIF to the warning output too, just in case it helps debugging
-       string wifKey = secp->GetPrivAddress(mode, k);
-       printf("[🟐 ]Priv (WIF): %s\n", wifKey.c_str());
-       // --- End WIF for warning ---
-
-       printf("[🟐 ]Endo:%d incr:%d comp:%d\n", endomorphism, incr, mode);
-       // The original had a commented out `return false;`. Keep it commented.
-       // return false;
-  } else {
-      // --- Match Found! ---
-
-      // Call the output function which now handles BOTH file and console printing
-      // It will print Add, Priv (WIF), and Key (Hex) to console and file.
-      output(chkAddr, secp->GetPrivAddress(mode ,k), k.GetBase16());
-
-
-
-      return true; // Indicate that a matching key was found and handled
   }
 
-  // This line is theoretically unreachable if the prefix comparison logic is flawless
-  // and every generated key matches *some* prefix, but keeping it doesn't hurt.
-  return false;
+  output(addr, secp->GetPrivAddress(mode ,k), k.GetBase16());
+
+  return true;
+
+}
+
+void VanitySearch::checkAddrSSE(uint8_t *h1, uint8_t *h2, uint8_t *h3, uint8_t *h4,
+                                int32_t incr1, int32_t incr2, int32_t incr3, int32_t incr4,
+                                Int &key, int endomorphism, bool mode) {
+
+  vector<string> addr = secp->GetAddress(searchType, mode, h1,h2,h3,h4);
+
+  for (int i = 0; i < (int)inputPrefixes.size(); i++) {
+
+    if (Wildcard::match(addr[0].c_str(), inputPrefixes[i].c_str(), caseSensitive)) {
+
+      // Found it !
+      //*((*pi)[i].found) = true;
+      if (checkPrivKey(addr[0], key, incr1, endomorphism, mode)) {
+        nbFoundKey++;
+        patternFound[i] = true;
+        updateFound();
+      }
+
+    }
+
+    if (Wildcard::match(addr[1].c_str(), inputPrefixes[i].c_str(), caseSensitive)) {
+
+      // Found it !
+      //*((*pi)[i].found) = true;
+      if (checkPrivKey(addr[1], key, incr2, endomorphism, mode)) {
+        nbFoundKey++;
+        patternFound[i] = true;
+        updateFound();
+      }
+
+    }
+
+    if (Wildcard::match(addr[2].c_str(), inputPrefixes[i].c_str(), caseSensitive)) {
+
+      // Found it !
+      //*((*pi)[i].found) = true;
+      if (checkPrivKey(addr[2], key, incr3, endomorphism, mode)) {
+        nbFoundKey++;
+        patternFound[i] = true;
+        updateFound();
+      }
+
+    }
+
+    if (Wildcard::match(addr[3].c_str(), inputPrefixes[i].c_str(), caseSensitive)) {
+
+      // Found it !
+      //*((*pi)[i].found) = true;
+      if (checkPrivKey(addr[3], key, incr4, endomorphism, mode)) {
+        nbFoundKey++;
+        patternFound[i] = true;
+        updateFound();
+      }
+
+    }
+
+  }
+
+
 }
 
 void VanitySearch::checkAddr(int prefIdx, uint8_t *hash160, Int &key, int32_t incr, int endomorphism, bool mode) {
 
-  vector<PREFIX_ITEM> *pi = nullptr;
-
   if (hasPattern) {
+
     // Wildcard search
-    string addr = secp->GetAddress(searchType, mode, hash160); // 地址生成放在循环外部
+    string addr = secp->GetAddress(searchType, mode, hash160);
 
     for (int i = 0; i < (int)inputPrefixes.size(); i++) {
+
       if (Wildcard::match(addr.c_str(), inputPrefixes[i].c_str(), caseSensitive)) {
-        nbFoundKey++;  // 每次 checkPrivKey 调用都增加计数器 (Wildcard)
-        updateFound(); // 更新 [Found] 显示 (Wildcard)
-        checkPrivKey(inputPrefixes[i], key, incr, endomorphism, mode); // 调用 checkPrivKey，但不依赖返回值
+
+        // Found it !
+        //*((*pi)[i].found) = true;
+        if (checkPrivKey(addr, key, incr, endomorphism, mode)) {
+          nbFoundKey++;
+          patternFound[i] = true;
+          updateFound();
+        }
+
       }
+
     }
+
     return;
 
-  } else {
-    // 非 Wildcard 搜索
-    pi = prefixes[prefIdx].items;
-
-    if (onlyFull) {
-      // Full addresses
-      for (int i = 0; i < (int)pi->size(); i++) {
-        if (stopWhenFound && *((*pi)[i].found))
-          continue;
-        if (ripemd160_comp_hash((*pi)[i].hash160, hash160)) {
-          *((*pi)[i].found) = true;
-          nbFoundKey++;  // 每次 checkPrivKey 调用都增加计数器 (Full Address)
-          updateFound(); // 更新 [Found] 显示 (Full Address)
-          checkPrivKey((*pi)[i].prefix, key, incr, endomorphism, mode); // 调用 checkPrivKey，但不依赖返回值
-        }
-      }
-
-    } else {
-      string addr = secp->GetAddress(searchType, mode, hash160); // **移动到循环外部**
-      // char a[64]; // 移除固定大小的 char 数组
-
-      for (int i = 0; i < (int)pi->size(); i++) {
-        if (stopWhenFound && *((*pi)[i].found))
-          continue;
-
-        string prefixToCheck = addr.substr(0, (*pi)[i].prefixLength); // 使用 substr
-
-        if (prefixToCheck == (*pi)[i].prefix) {
-          *((*pi)[i].found) = true;
-          nbFoundKey++;  // 每次 checkPrivKey 调用都增加计数器 (Prefix Search)
-          updateFound(); // 更新 [Found] 显示 (Prefix Search)
-          checkPrivKey((*pi)[i].prefix, key, incr, endomorphism, mode); // 调用 checkPrivKey，但不依赖返回值
-        }
-      }
-    }
   }
+
+  vector<PREFIX_ITEM> *pi = prefixes[prefIdx].items;
+
+  if (onlyFull) {
+
+    // Full addresses
+    for (int i = 0; i < (int)pi->size(); i++) {
+
+      if (stopWhenFound && *((*pi)[i].found))
+        continue;
+
+      if (ripemd160_comp_hash((*pi)[i].hash160, hash160)) {
+
+        // Found it !
+        *((*pi)[i].found) = true;
+        // You believe it ?
+        if (checkPrivKey(secp->GetAddress(searchType, mode, hash160), key, incr, endomorphism, mode)) {
+          nbFoundKey++;
+          updateFound();
+        }
+
+      }
+
+    }
+
+  } else {
+
+
+    char a[64];
+
+    string addr = secp->GetAddress(searchType, mode, hash160);
+
+    for (int i = 0; i < (int)pi->size(); i++) {
+
+      if (stopWhenFound && *((*pi)[i].found))
+        continue;
+
+      strncpy(a, addr.c_str(), (*pi)[i].prefixLength);
+      a[(*pi)[i].prefixLength] = 0;
+
+      if (strcmp((*pi)[i].prefix, a) == 0) {
+
+        // Found it !
+        *((*pi)[i].found) = true;
+        if (checkPrivKey(addr, key, incr, endomorphism, mode)) {
+          nbFoundKey++;
+          updateFound();
+        }
+
+      }
+
+    }
+
+  }
+
 }
+
 // ----------------------------------------------------------------------------
 
 #ifdef WIN64
@@ -1047,8 +1065,8 @@ void *_FindKeyGPU(void *lpParam) {
 void VanitySearch::checkAddresses(bool compressed, Int key, int i, Point p1) {
 
   unsigned char h0[20];
-  //Point pte1[1];
-  //Point pte2[1];
+  Point pte1[1];
+  Point pte2[1];
 
   // Point
   secp->GetHash160(searchType,compressed, p1, h0);
@@ -1057,55 +1075,55 @@ void VanitySearch::checkAddresses(bool compressed, Int key, int i, Point p1) {
     checkAddr(pr0, h0, key, i, 0, compressed);
 
   // Endomorphism #1
-  //pte1[0].x.ModMulK1(&p1.x, &beta);
-  //pte1[0].y.Set(&p1.y);
+  pte1[0].x.ModMulK1(&p1.x, &beta);
+  pte1[0].y.Set(&p1.y);
 
-  //secp->GetHash160(searchType, compressed, pte1[0], h0);
+  secp->GetHash160(searchType, compressed, pte1[0], h0);
 
-  //pr0 = *(prefix_t *)h0;
-  //if (hasPattern || prefixes[pr0].items)
-    //checkAddr(pr0, h0, key, i, 1, compressed);
+  pr0 = *(prefix_t *)h0;
+  if (hasPattern || prefixes[pr0].items)
+    checkAddr(pr0, h0, key, i, 1, compressed);
 
   // Endomorphism #2
-  //pte2[0].x.ModMulK1(&p1.x, &beta2);
-  //pte2[0].y.Set(&p1.y);
+  pte2[0].x.ModMulK1(&p1.x, &beta2);
+  pte2[0].y.Set(&p1.y);
 
-  //secp->GetHash160(searchType, compressed, pte2[0], h0);
+  secp->GetHash160(searchType, compressed, pte2[0], h0);
 
-  //pr0 = *(prefix_t *)h0;
-  //if (hasPattern || prefixes[pr0].items)
-    //checkAddr(pr0, h0, key, i, 2, compressed);
+  pr0 = *(prefix_t *)h0;
+  if (hasPattern || prefixes[pr0].items)
+    checkAddr(pr0, h0, key, i, 2, compressed);
 
   // Curve symetrie
   // if (x,y) = k*G, then (x, -y) is -k*G
-  //p1.y.ModNeg();
-  //secp->GetHash160(searchType, compressed, p1, h0);
-  //pr0 = *(prefix_t *)h0;
-  //if (hasPattern || prefixes[pr0].items)
-    //checkAddr(pr0, h0, key, -i, 0, compressed);
+  p1.y.ModNeg();
+  secp->GetHash160(searchType, compressed, p1, h0);
+  pr0 = *(prefix_t *)h0;
+  if (hasPattern || prefixes[pr0].items)
+    checkAddr(pr0, h0, key, -i, 0, compressed);
 
   // Endomorphism #1
-  //pte1[0].y.ModNeg();
+  pte1[0].y.ModNeg();
 
-  //secp->GetHash160(searchType, compressed, pte1[0], h0);
+  secp->GetHash160(searchType, compressed, pte1[0], h0);
 
-  //pr0 = *(prefix_t *)h0;
-  //if (hasPattern || prefixes[pr0].items)
-    //checkAddr(pr0, h0, key, -i, 1, compressed);
+  pr0 = *(prefix_t *)h0;
+  if (hasPattern || prefixes[pr0].items)
+    checkAddr(pr0, h0, key, -i, 1, compressed);
 
   // Endomorphism #2
-  //pte2[0].y.ModNeg();
+  pte2[0].y.ModNeg();
 
-  //secp->GetHash160(searchType, compressed, pte2[0], h0);
+  secp->GetHash160(searchType, compressed, pte2[0], h0);
 
-  //pr0 = *(prefix_t *)h0;
-  //if (hasPattern || prefixes[pr0].items)
-    //checkAddr(pr0, h0, key, -i, 2, compressed);
+  pr0 = *(prefix_t *)h0;
+  if (hasPattern || prefixes[pr0].items)
+    checkAddr(pr0, h0, key, -i, 2, compressed);
 
 }
 
 // ----------------------------------------------------------------------------
-/*
+
 void VanitySearch::checkAddressesSSE(bool compressed,Int key, int i, Point p1, Point p2, Point p3, Point p4) {
 
   unsigned char h0[20];
@@ -1310,97 +1328,50 @@ void VanitySearch::checkAddressesSSE(bool compressed,Int key, int i, Point p1, P
   }
 
 }
-*/
 
-
-/*
 // ----------------------------------------------------------------------------
+// 修改 getCPUStartingKey
 void VanitySearch::getCPUStartingKey(int thId,Int& key,Point& startP) {
 
   if (rekey > 0) {
-    key.Rand(256);
+    // --- 在指定范围内生成随机私钥 ---
+    // secp->order 是曲线阶数 N
+    if (!key.RandRange(min_range, max_range, secp->order)) {
+        // RandRange 失败，已经打印错误信息
+        // 这里可以选择退出线程或者设置一个标志让主循环知道
+        // 简单处理：设置 key 为 0，后续检查会识别为无效密钥
+        // 或者更安全：设置一个标志让主循环退出所有线程
+        // 为了简单，假设 RandRange 内部处理致命错误（比如打印错误后退出）
+        // 如果 RandRange 返回 false，表示生成失败，我们应该停止
+        fprintf(stderr, "Fatal Error: CPU Thread %d failed to generate random key in range. Exiting...\n", thId);
+        endOfSearch = true; // 通知所有线程退出
+        return;
+    }
+    // --- 结束 ---
   } else {
+    // 已有逻辑：基于 startKey + offset，用于确定性搜索模式
     key.Set(&startKey);
-    Int off((int64_t)thId);
-    off.ShiftL(64);
+    Int off((int64_t)thId * CPU_GRP_SIZE); // Offset based on thread ID and group size
+    // Note: This offset method might still go outside the defined range [min_range, max_range]
+    // in non-rekey mode for subsequent blocks, if the range is small.
+    // The current implementation of non-rekey mode is primarily for searching contiguous large ranges.
+    // If a small range is specified, rekey mode (sampling) is more appropriate.
+    // We added a check in constructor that the *initial* startKey is in range for rekey=0.
+    // But subsequent keys startKey + N*CPU_GRP_SIZE * NbThreads will likely exceed it.
+    // This is a limitation of combining deterministic search with small ranges.
+    // For now, we assume the range check is primarily for the *random sampling* in rekey mode.
+    // If strict range search in non-rekey mode is needed, the iteration logic itself must be constrained.
+    off.Add((uint64_t)CPU_GRP_SIZE / 2); // Offset to the middle of the first group
     key.Add(&off);
   }
+
   Int km(&key);
-  km.Add((uint64_t)CPU_GRP_SIZE / 2);
+  //km.Add((uint64_t)CPU_GRP_SIZE / 2); // This offset is already added above for rekey=0, and not needed for rekey>0 sampling
   startP = secp->ComputePublicKey(&km);
   if(startPubKeySpecified)
    startP = secp->AddDirect(startP,startPubKey);
 
 }
-*/
-// ----------------------------------------------------------------------------
-void VanitySearch::getCPUStartingKey(int thId, Int& key, Point& startP) {
-
-  // !!! Random seed
-  //rseed((unsigned long)time(NULL));// if not used OpenSSL
-  //
-  // Seed random number generator with performance counter
-  //if (keys_seed_fl) { RandAddSeed(); }
-  //
-  Int one1;
-  one1.SetInt32(1);
-  key2.SetInt32(1);
-  key3.SetInt32(1);
-  key2.ShiftL((uint32_t)(Random_bits - 1));
-  key3.ShiftL((uint32_t)Random_bits);
-  key3.Sub(&one1);// for strcmp()
-  //
-  //printf("\nRandom Bit: %d keys range: %s:%s\n", Random_bits, key2.GetBase16().c_str(), key3.GetBase16().c_str());
-  //while (1) {}//check
-  //
-  int Key_bits_length = 0;
-  if (rekey > 0) {
-    NewRandom:
-	key.Rand(Random_bits);// bit 66
-	//key2.SetBase16("20000000000000000");// min value bit 66
-	//key3.SetBase16("3ffffffffffffffff");// max value bit 66
-	bool keyOk = false;
-	while ((!keyOk && strcmp(key.GetBase16().c_str(), key2.GetBase16().c_str()) < 0) || (!keyOk && strcmp(key.GetBase16().c_str(), key3.GetBase16().c_str()) > 0)) {//while (strcmp(key1.GetBase16().c_str(), key2.GetBase16().c_str()) < 0) {
-
-		//printf("\nBit %d Base Key thId %d: %s < %s or > %s Rekey true \n", Random_bits, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
-		Key_bits_length = key.GetBitLength();
-		//printf("[🟑 ]Bit %d Base Key thId %d: %s < %s or > %s Rekey true \r", Key_bits_length, thId, key.GetBase16().c_str(), key2.GetBase16().c_str(), key3.GetBase16().c_str());
-		//
-		key.Rand(Random_bits);// bit 66
-		//
-		if (strcmp(key.GetBase16().c_str(), key2.GetBase16().c_str()) < 0 || strcmp(key.GetBase16().c_str(), key3.GetBase16().c_str()) > 0) {
-			keyOk = false;
-			//key.Rand(Random_bits);// bit 66
-			//
-		} else {
-			keyOk = true;
-			break;
-		}
-	}
-
-	//printf("\nBit %d CPU Base Key thId %d: %s\n", Random_bits, thId, key.GetBase16().c_str());
-	Key_bits_length = key.GetBitLength();
-	if (Key_bits_length != Random_bits) goto NewRandom;// check
-	//printf("[🟑 ]Bit %d CPU Base Key thId %d: %s\r", Key_bits_length, thId, key.GetBase16().c_str());
-  } else {
-    key.Set(&startKey);
-    Int off((int64_t)thId);
-    //off.ShiftL(64);
-	//
-	int nbBit = startKey.GetBitLength();
-	off.ShiftL((uint32_t)(nbBit - 8));
-	//
-	key.Add(&off);
-	//printf("[🟑 ]CPU Base Key thId %d: %s\r", thId, key.GetBase16().c_str());
-  }
-  Int km(&key);
-  km.Add((uint64_t)CPU_GRP_SIZE / 2);
-  startP = secp->ComputePublicKey(&km);
-  if(startPubKeySpecified)
-   startP = secp->AddDirect(startP,startPubKey);
-
-}
-
 
 void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
 
@@ -1412,7 +1383,7 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
   IntGroup *grp = new IntGroup(CPU_GRP_SIZE/2+1);
 
   // Group Init
-  Int  key;
+  Int  key; // This is the base key for the current group
   Point startP;
   getCPUStartingKey(thId,key,startP);
 
@@ -1430,11 +1401,18 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
   ph->hasStarted = true;
   ph->rekeyRequest = false;
 
+  // Debug: Print initial info for this thread
+  //printf("Debug CPU Thread %d: Starting search from key %s\n", thId, key.GetBase16().c_str());
+  //printf("Debug CPU Thread %d: Target range [%s, %s]\n", thId, min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+
+
   while (!endOfSearch) {
 
     if (ph->rekeyRequest) {
       getCPUStartingKey(thId, key, startP);
       ph->rekeyRequest = false;
+       // Debug: Print new starting key after rekey
+      //printf("Debug CPU Thread %d: Rekey requested. New starting key %s\n", thId, key.GetBase16().c_str());
     }
 
     // Fill group
@@ -1541,35 +1519,58 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
           wrong = true;
           printf("[%d] wrong point\n",i);
         }
-        p0 = secp.NextKey(p0);
+        p0 = secp->NextKey(p0);
       }
       if(wrong) exit(0);
     }
 #endif
 
     // Check addresses
-    if (0) {//if (useSSE) {
+    if (useSSE) {
 
       for (int i = 0; i < CPU_GRP_SIZE && !endOfSearch; i += 4) {
+           // Calculate the actual keys being checked in this SSE group
+           Int current_key_base(&key); // base key for this group
+           Int key1(current_key_base); key1.Add((uint64_t)i);
+           Int key2(current_key_base); key2.Add((uint64_t)(i+1));
+           Int key3(current_key_base); key3.Add((uint64_t)(i+2));
+           Int key4(current_key_base); key4.Add((uint64_t)(i+3));
+
+            // Debug: Print the keys being checked in this SSE block
+            //printf("Debug CPU Thread %d SSE Block (i=%d): Checking keys %s, %s, %s, %s against range [%s, %s]\n",
+                   //ph->threadId, i,
+                   //key1.GetBase16().c_str(), key2.GetBase16().c_str(),
+                   //key3.GetBase16().c_str(), key4.GetBase16().c_str(),
+                  // min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+
 
         switch (searchMode) {
           case SEARCH_COMPRESSED:
-            //checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+            checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
             break;
           case SEARCH_UNCOMPRESSED:
-            //checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+            checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
             break;
           case SEARCH_BOTH:
-            //checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
-            //checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+            checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+            checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
             break;
         }
 
       }
 
-    } else {
+    } else { // Non-SSE
 
       for (int i = 0; i < CPU_GRP_SIZE && !endOfSearch; i ++) {
+           // Calculate the actual key being checked
+           Int current_key(&key); // base key for this group
+           current_key.Add((uint64_t)i); // This is the actual key being considered
+
+           // Debug: Print the key being checked
+           //printf("Debug CPU Thread %d (i=%d): Checking key %s against range [%s, %s]\n",
+                  //ph->threadId, i,
+                  //current_key.GetBase16().c_str(),
+                  //min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
 
         switch (searchMode) {
         case SEARCH_COMPRESSED:
@@ -1588,122 +1589,79 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
 
     }
 
+    // Update key to the base key of the *next* group
     key.Add((uint64_t)CPU_GRP_SIZE);
-    //counters[thId]+= 6*CPU_GRP_SIZE; // Point + endo #1 + endo #2 + Symetric point + endo #1 + endo #2
-	counters[thId]+= CPU_GRP_SIZE;
+    counters[thId]+= 6*CPU_GRP_SIZE; // Point + endo #1 + endo #2 + Symetric point + endo #1 + endo #2
 
+    // Optional: Add optimization for skipping whole groups or stopping thread
+    // Int next_group_start(&key); // 'key' is already the start of the next group here
+    // if (next_group_start.IsGreater(&max_range)) {
+    //      printf("Debug CPU Thread %d: Next group starts at %s, which is > max_range %s. Signalling end.\n",
+    //             ph->threadId, next_group_start.GetBase16().c_str(), max_range.GetBase16().c_str());
+    //      // This thread should stop or wait. Setting endOfSearch affects all threads.
+    //      // For deterministic search restricted to a range, a single thread finishing its range
+    //      // means it should stop, but others might continue. This needs per-thread stop logic.
+    //      // For now, let's just print the debug message. The loop condition !endOfSearch will eventually catch a global stop.
+    //      // If we need per-thread stop, 'isRunning' in TH_PARAM could be set to false here.
+    // }
   }
 
-  ph->isRunning = false;
+  //ph->isRunning = false;
+   // Debug: Print thread exiting
+   //printf("Debug CPU Thread %d: Exiting FindKeyCPU loop.\n", thId);
 
 }
 
-/*
+
 // ----------------------------------------------------------------------------
 
+// 修改 getGPUStartingKeys
 void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int *keys, Point *p) {
 
   for (int i = 0; i < nbThread; i++) {
     if (rekey > 0) {
-      keys[i].Rand(256);
+      // --- 在指定范围内生成随机私钥 ---
+      if (!keys[i].RandRange(min_range, max_range, secp->order)) {
+          // RandRange 失败
+          fprintf(stderr, "Fatal Error: GPU Thread %d failed to generate random key in range. Exiting...\n", thId);
+          endOfSearch = true; // 通知所有线程退出
+          return;
+      }
+      // --- 结束 ---
     } else {
+      // 已有逻辑：基于 startKey + offset，用于确定性搜索模式
       keys[i].Set(&startKey);
-      Int offT((uint64_t)i);
-      offT.ShiftL(80);
-      Int offG((uint64_t)thId);
-      offG.ShiftL(112);
+      // 这里的偏移量计算方式需要与 CPU 线程的 offset 一致，以便线程之间搜索连续的金钥空间
+      // CPU Thread offset = thId * CPU_GRP_SIZE + CPU_GRP_SIZE / 2
+      // GPU Thread offset = ?
+      // 原来的 GPU offset 计算: Int offT((uint64_t)i); offT.ShiftL(80); Int offG((uint64_t)thId); offG.ShiftL(112);
+      // 这看起来是根据线程 ID 和 GPU 组 ID 生成非常大的、不连续的偏移。
+      // 让我们使用一个更简单的、与 CPU 线程偏移量相容的方案：
+      // 总线程索引 = GPU装置ID * GPUDeviceThreads + 当前GPU线程 ID * nbThreadPerGroup + threadIdx.x (within block)
+      // 这个更复杂，因为 GPU 有 blockIdx 和 threadIdx。
+      // 考虑到 Rekey 模式才是为范围搜索设计的，并且它完全随机采样，我们主要修改 Rekey 模式。
+      // 非 Rekey 模式保持原有逻辑（或者简单地检查生成的起始密钥是否在范围内，超范围就跳過或退出）。
+      // Let's stick to modifying only the rekey>0 part for range sampling.
+      // For rekey=0, the original offset logic determines the search space.
+
+      // Original GPU offset logic (preserved for rekey == 0):
+      Int offT((uint64_t)i); // Thread index within this GPU instance's total threads
+      offT.ShiftL(80); // Original large shifts
+      Int offG((uint64_t)thId); // GPU instance ID
+      offG.ShiftL(112); // Original large shifts
       keys[i].Add(&offT);
       keys[i].Add(&offG);
     }
+    // --- 原始逻辑：将起始 key 偏移到组的中间 ---
     Int k(keys + i);
-    // Starting key is at the middle of the group
-    k.Add((uint64_t)(groupSize / 2));
+    // Starting key is at the middle of the group (STEP_SIZE is used by GPU Kernel iteration)
+    k.Add((uint64_t)(STEP_SIZE / 2)); // Use STEP_SIZE instead of GRP_SIZE for GPU
     p[i] = secp->ComputePublicKey(&k);
     if (startPubKeySpecified)
       p[i] = secp->AddDirect(p[i], startPubKey);
   }
 
 }
-*/
-
-// ----------------------------------------------------------------------------
-
-void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int *keys, Point *p) {
-
-  // !!! Random seed
-  //rseed((unsigned long)time(NULL));// if not used OpenSSL
-  //
-  // Seed random number generator with performance counter
-  //if (keys_seed_fl) { RandAddSeed(); }
-  //
-  Int one1;
-  one1.SetInt32(1);
-  key2.SetInt32(1);
-  key3.SetInt32(1);
-  key2.ShiftL((uint32_t)(Random_bits - 1));
-  key3.ShiftL((uint32_t)Random_bits);
-  key3.Sub(&one1);// for strcmp()
-  //
-  for (int i = 0; i < nbThread; i++) {
-    int Key_bits_length = 0;
-	if (rekey > 0) {
-      NewRandom:
-	  keys[i].Rand(Random_bits);// BIT 66
-	  //key2.SetBase16("20000000000000000");// min value bit 66
-	  //key3.SetBase16("3ffffffffffffffff");// max value bit 66
-	  //
-	  bool keyOk = false;
-	  while ((!keyOk && strcmp(keys[i].GetBase16().c_str(), key2.GetBase16().c_str()) < 0) || (!keyOk && strcmp(keys[i].GetBase16().c_str(), key3.GetBase16().c_str()) > 0)) {//while (strcmp(key1.GetBase16().c_str(), key2.GetBase16().c_str()) < 0) {
-		  // print check
-		  //printf("GPU Base Key: %s < %s OR Key: %s > %s Rekey true \n", keys[i].GetBase16().c_str(), key2.GetBase16().c_str(), keys[i].GetBase16().c_str(), key3.GetBase16().c_str());
-		  //
-		  keys[i].Rand(Random_bits);// BIT 66
-		  //
-		  if (strcmp(keys[i].GetBase16().c_str(), key2.GetBase16().c_str()) < 0 || strcmp(keys[i].GetBase16().c_str(), key3.GetBase16().c_str()) > 0) {
-			keyOk = false;
-			//keys[i].Rand(Random_bits);// BIT 66
-			//
-		  } else {
-			keyOk = true;
-			break;
-		  }
-	  }
-	  // print 20 keys
-	  //if (i < 10 || i > nbThread - 10) { printf("Bit %d GPU Base Key %d: %s\n", Random_bits, i, keys[i].GetBase16().c_str()); }
-	  Key_bits_length = keys[i].GetBitLength();
-	  if (Key_bits_length != Random_bits) goto NewRandom;// check
-	  //if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU Base Key %d: %s\r", Key_bits_length, i, keys[i].GetBase16().c_str()); }
-	  //
-    } else {
-      //
-	  keys[i].Set(&startKey);
-      Int offT((uint64_t)i);
-      //offT.ShiftL(32);
-      Int offG((uint64_t)thId);
-      //offG.ShiftL(40);
-	  // new offset
-	  int nbBit = startKey.GetBitLength();
-	  offT.ShiftL((uint32_t)(nbBit / 2));
-	  offG.ShiftL((uint32_t)(nbBit - 4));
-	  //
-      keys[i].Add(&offT);
-      keys[i].Add(&offG);
-	  //if (i < 10 || i > nbThread - 10) { printf("[🟑 ]Bit %d GPU startKey Base Key %d: %s\r", Random_bits, i, keys[i].GetBase16().c_str()); }
-	  //
-    }
-    //Int k(keys + i);
-	Int k(keys[i]);
-    // Starting key is at the middle of the group
-    k.Add((uint64_t)(groupSize / 2));
-    p[i] = secp->ComputePublicKey(&k);
-    if (startPubKeySpecified)
-      p[i] = secp->AddDirect(p[i], startPubKey);
-  }
-
-}
-
-// ----------------------------------------------------------------------------
-
 void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
 
   bool ok = true;
@@ -1718,7 +1676,7 @@ void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
   Int *keys = new Int[nbThread];
   vector<ITEM> found;
 
-  printf("[🟑 ]GPU: %s\n",g.deviceName.c_str());
+  printf("❀  GPU: %s\n",g.deviceName.c_str());
 
   counters[thId] = 0;
 
@@ -1764,8 +1722,7 @@ void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
       for (int i = 0; i < nbThread; i++) {
         keys[i].Add((uint64_t)STEP_SIZE);
       }
-      //counters[thId] += 6ULL * STEP_SIZE * nbThread; // Point +  endo1 + endo2 + symetrics
-	  counters[thId] += STEP_SIZE * nbThread;
+      counters[thId] += 6ULL * STEP_SIZE * nbThread; // Point +  endo1 + endo2 + symetrics
     }
 
   }
@@ -1775,7 +1732,7 @@ void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
 
 #else
   ph->hasStarted = true;
-  printf("GPU code not compiled, use -DWITHGPU when compiling.\r");
+  printf("GPU code not compiled, use -DWITHGPU when compiling.\n");
 #endif
 
   ph->isRunning = false;
@@ -1852,7 +1809,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
 
   memset(counters,0,sizeof(counters));
 
-  printf("[🟑 ]Number of CPU thread: %d\n", nbCPUThread);
+  printf("❀  Number of CPU thread: %d\n", nbCPUThread);
 
   TH_PARAM *params = (TH_PARAM *)malloc((nbCPUThread + nbGPUThread) * sizeof(TH_PARAM));
   memset(params,0,(nbCPUThread + nbGPUThread) * sizeof(TH_PARAM));
@@ -1928,7 +1885,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
     }
 
     gpuCount = getGPUCount();
-    uint64_t count = getCPUCount() + gpuCount;
+    uint64_t count = getCPUCount() + getGPUCount(); // 当前总计key数
 
     t1 = Timer::get_tick();
     keyRate = (double)(count - lastCount) / (t1 - t0);
@@ -1949,9 +1906,27 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
     avgGpuKeyRate /= (double)(nbSample);
 
     if (isAlive(params)) {
-      printf("[🟑 ][Ts %.2f Mkey/s][GPU %.2f Mkey/s][Total 2^%.2f]%s[Found %d]\r",
-        avgKeyRate / 1000000.0, avgGpuKeyRate / 1000000.0,
-          log2((double)count), GetExpectedTime(avgKeyRate, (double)count).c_str(),nbFoundKey);
+      // --- 状态打印语句 ---
+      char status_buffer[512]; // 使用一个缓冲区来构建完整的状态字符串
+      int written = snprintf(status_buffer, sizeof(status_buffer),
+                             "\r❀  [%.2f Mkey/s][GPU %.2f Mkey/s][Total 2^%.2f]%s",
+                             avgKeyRate / 1000000.0, avgGpuKeyRate / 1000000.0,
+                             log2((double)count), GetExpectedTime(avgKeyRate, (double)count).c_str());
+
+      // 如果开启了rekey模式 (-R > 0)，则添加rekey次数
+      if (this->rekey > 0 && written < sizeof(status_buffer)) {
+          written += snprintf(status_buffer + written, sizeof(status_buffer) - written,
+                              "[Rekey %u]", this->rekeyCount); // 添加rekey次数
+      }
+
+      // 添加 Found 次数和末尾空格
+      if (written < sizeof(status_buffer)) {
+          snprintf(status_buffer + written, sizeof(status_buffer) - written,
+                   "[Found %d]  ", nbFoundKey); // 添加 Found 次数和末尾空格
+      }
+
+      printf("%s", status_buffer); // 打印构建好的状态字符串
+      // --- 结束 ---
     }
 
     if (rekey > 0) {
@@ -1959,6 +1934,7 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
         // Rekey request
         rekeyRequest(params);
         lastRekey = count;
+        this->rekeyCount++; // <-- 在这里增加rekey次数
       }
     }
 
@@ -1971,15 +1947,18 @@ void VanitySearch::Search(int nbThread,std::vector<int> gpuId,std::vector<int> g
   free(params);
 
 }
-
 // ----------------------------------------------------------------------------
 
 string VanitySearch::GetHex(vector<unsigned char> &buffer) {
+
   string ret;
+
   char tmp[128];
   for (int i = 0; i < (int)buffer.size(); i++) {
     sprintf(tmp,"%02X",buffer[i]);
     ret.append(tmp);
   }
+
   return ret;
+
 }
