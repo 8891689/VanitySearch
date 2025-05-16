@@ -210,51 +210,37 @@ Addr (BECH32): bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
 
 The v2.0 version does not require any dependencies and can be compiled directly.
 
-Debian/Ubuntu based systems (such as Debian if you are using it):
-```
-sudo apt update
-sudo apt install libssl-dev
-```
 
-Fedora/CentOS/RHEL based systems:
-```
-sudo yum install openssl-devel
-```
 
-or for newer Fedora/CentOS Stream/RHEL 8+
-```
-sudo dnf install openssl-devel
-```
-
-Arch Linux based systems:
-```
-sudo pacman -S openssl
-```
-
-macOS (using Homebrew):
-```
-brew install openssl
-```
-```
 ------------------------------------------------------------------------------------------------------------------
-
-Random Bitcoin Puzzle #68 Private Keys
-Start key 0000000000000000000000000000000000000000000000080000000000000000 
-Stop key 00000000000000000000000000000000000000000000000fffffffffffffffff 
-80000000000000000...fffffffffffffffff (267...268)
-P2PKH(c) 1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ
+```
+Random Bitcoin Puzzle #71 Private Keys
+HEX Unsolved
+Start key 0000000000000000000000000000000000000000000000400000000000000000
+Stop key 00000000000000000000000000000000000000000000007fffffffffffffffff
+400000000000000000...7fffffffffffffffff (270...271)
 
 ```
 ```
-Shāng (wèi):68 Zǒng jiàn shù:295147905179352825856 Sōusuǒ sùdù:2123 Měi miǎo M jiàn shù (10^6) tiān:1609073.819 Xīngqí:229867.688 Yuè:52791.136 Nián:4405.404
-108 / 5,000
-Entropy (bits): 68
-Total keys: 295147905179352825856
-Search speed: 2123 M keys per second (10^6)
-Day: 1609073.819
-Week: 229867.688
-Month: 52791.136
-Year: 4405.404
+Bitcoin Challenge Odds Calculator
+Entropy (bits)
+71
+Total Keys
+2361183241434822606848
+Search Speed
+3525
+Prefix
+MKeys/s (10^6)
+The odds of finding a private key within:
+Day
+7752768.720
+Week
+1107538.389
+Month
+254355.929
+Year
+21225.924
+
 
 ----------------------------------------------------------------------------------------------------------------
 
