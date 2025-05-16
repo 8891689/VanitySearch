@@ -13,8 +13,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ 
+ * Copyright (c) 2025 8891689
+ * https://github.com/8891689
+ * This code file contains modifications of the original work (Copyright (c) 2019 Jean Luc PONS).
 */
-
 #ifndef VANITYH
 #define VANITYH
 
@@ -22,6 +25,8 @@
 #include <vector>
 #include "SECP256k1.h"
 #include "GPU/GPUEngine.h"
+
+#include "Int.h" 
 #ifdef WIN64
 #include <Windows.h>
 #endif
@@ -70,9 +75,11 @@ class VanitySearch {
 
 public:
 
-  VanitySearch(Secp256K1 *secp, std::vector<std::string> &prefix, std::string seed, std::string start_key, int Random_bit, int FuncLevel, int searchMode,
-               bool useGpu,bool stop, std::string outputFile, bool useSSE,uint32_t maxFound,uint64_t rekey,
-               bool caseSensitive, Point &startPubKey, bool paranoiacSeed);
+  // 构造函数签名，添加 min_range 和 max_range 参数
+  VanitySearch(Secp256K1 *secp, std::vector<std::string> &inputPrefixes,std::string seed,int searchMode,
+                           bool useGpu, bool stop, std::string outputFile, bool useSSE, uint32_t maxFound,
+                           uint64_t rekey, bool caseSensitive, Point &startPubKey, bool paranoiacSeed,
+                           const Int& min_range, const Int& max_range); // <-- 添加 min/max range 参数
 
   void Search(int nbThread,std::vector<int> gpuId,std::vector<int> gridSize);
   void FindKeyCPU(TH_PARAM *p);
@@ -80,15 +87,19 @@ public:
 
 private:
 
+  // 添加成员变量来保存随机范围
+  Int min_range; // <-- 添加最小私钥范围
+  Int max_range; // <-- 添加最大私钥范围
+
   std::string GetHex(std::vector<unsigned char> &buffer);
   std::string GetExpectedTime(double keyRate, double keyCount);
   bool checkPrivKey(std::string addr, Int &key, int32_t incr, int endomorphism, bool mode);
   void checkAddr(int prefIdx, uint8_t *hash160, Int &key, int32_t incr, int endomorphism, bool mode);
-  //void checkAddrSSE(uint8_t *h1, uint8_t *h2, uint8_t *h3, uint8_t *h4,
-  //                  int32_t incr1, int32_t incr2, int32_t incr3, int32_t incr4,
-  //                  Int &key, int endomorphism, bool mode);
+  void checkAddrSSE(uint8_t *h1, uint8_t *h2, uint8_t *h3, uint8_t *h4,
+                    int32_t incr1, int32_t incr2, int32_t incr3, int32_t incr4,
+                    Int &key, int endomorphism, bool mode);
   void checkAddresses(bool compressed, Int key, int i, Point p1);
-  //void checkAddressesSSE(bool compressed, Int key, int i, Point p1, Point p2, Point p3, Point p4);
+  void checkAddressesSSE(bool compressed, Int key, int i, Point p1, Point p2, Point p3, Point p4);
   void output(std::string addr, std::string pAddr, std::string pAddrHex);
   bool isAlive(TH_PARAM *p);
   bool isSingularPrefix(std::string pref);
@@ -100,21 +111,16 @@ private:
   void dumpPrefixes();
   double getDiffuclty();
   void updateFound();
-  void getCPUStartingKey(int thId, Int& key, Point& startP);
+
+  // 获取起始密钥的方法，使其在 Rekey 时使用指定范围
+  void getCPUStartingKey(int thId,Int& key,Point& startP);
   void getGPUStartingKeys(int thId, int groupSize, int nbThread, Int *keys, Point *p);
+
   void enumCaseUnsentivePrefix(std::string s, std::vector<std::string> &list);
   bool prefixMatch(char *prefix, char *addr);
 
   Secp256K1 *secp;
   Int startKey;
-  Int key1;
-  Int key2;
-  Int key3;
-  // Randon bits 
-  int Random_bits;
-  int FunctionLevel;
-  bool keys_seed_fl;
-  //
   Point startPubKey;
   bool startPubKeySpecified;
   uint64_t counters[256];
@@ -130,6 +136,7 @@ private:
   int nbGPUThread;
   int nbFoundKey;
   uint64_t rekey;
+  uint32_t rekeyCount;
   uint64_t lastRekey;
   uint32_t nbPrefix;
   std::string outputFile;
