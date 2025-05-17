@@ -7,7 +7,7 @@ SRC = Base58.cpp IntGroup.cpp main.cpp Random.cpp \
       Timer.cpp Int.cpp IntMod.cpp Point.cpp SECP256K1.cpp \
       Vanity.cpp GPU/GPUGenerate.cpp hash/ripemd160.cpp \
       hash/sha256.cpp hash/sha512.cpp hash/ripemd160_sse.cpp \
-      hash/sha256_sse.cpp Bech32.cpp Wildcard.cpp
+      hash/sha256_sse.cpp Bech32.cpp Wildcard.cpp bitrange.cpp
 
 OBJDIR = obj
 
@@ -18,7 +18,7 @@ OBJET = $(addprefix $(OBJDIR)/, \
         IntMod.o Point.o SECP256K1.o Vanity.o GPU/GPUGenerate.o \
         hash/ripemd160.o hash/sha256.o hash/sha512.o \
         hash/ripemd160_sse.o hash/sha256_sse.o \
-        GPU/GPUEngine.o Bech32.o Wildcard.o)
+        GPU/GPUEngine.o Bech32.o Wildcard.o bitrange.o)
 
 else
 
@@ -26,7 +26,7 @@ OBJET = $(addprefix $(OBJDIR)/, \
         Base58.o IntGroup.o main.o Random.o Timer.o Int.o \
         IntMod.o Point.o SECP256K1.o Vanity.o GPU/GPUGenerate.o \
         hash/ripemd160.o hash/sha256.o hash/sha512.o \
-        hash/ripemd160_sse.o hash/sha256_sse.o Bech32.o Wildcard.o)
+        hash/ripemd160_sse.o hash/sha256_sse.o Bech32.o Wildcard.o bitrange.o)
 
 endif
 
@@ -34,23 +34,22 @@ CXX        = g++
 CUDA       = /usr/local/cuda
 CXXCUDA    = /usr/bin/g++
 NVCC       = $(CUDA)/bin/nvcc
-# nvcc requires joint notation w/o dot, i.e. "5.2" -> "52"
-ccap       = $(shell echo $(CCAP) | tr -d '.')
+# Removed CCAP and ccap variables as multiple architectures are specified below
 
 ifdef gpu
 ifdef debug
-CXXFLAGS   = -DWITHGPU -m64  -mssse3 -Wno-write-strings -g -I. -I$(CUDA)/include -I/usr/local/include
+CXXFLAGS   = -DWITHGPU -m64  -mssse3 -Wno-write-strings -g -I. -I$(CUDA)/include
 else
-CXXFLAGS   =  -DWITHGPU -m64 -mssse3 -Wno-write-strings -O3 -I. -I$(CUDA)/include -I/usr/local/include
+CXXFLAGS   =  -DWITHGPU -m64 -mssse3 -Wno-write-strings -O3 -I. -I$(CUDA)/include
 endif
-LFLAGS     = -lpthread -L$(CUDA)/lib64 -lcudart -L/usr/local/lib64 -lssl -lcrypto
+LFLAGS     = -lpthread -L$(CUDA)/lib64 -lcudart
 else
 ifdef debug
-CXXFLAGS   = -m64 -mssse3 -Wno-write-strings -g -I. -I$(CUDA)/include -I/usr/local/include
+CXXFLAGS   = -m64 -mssse3 -Wno-write-strings -g -I. -I$(CUDA)/include
 else
-CXXFLAGS   =  -m64 -mssse3 -Wno-write-strings -O3 -I. -I$(CUDA)/include -I/usr/local/include
+CXXFLAGS   =  -m64 -mssse3 -Wno-write-strings -O3 -I. -I$(CUDA)/include
 endif
-LFLAGS     = -lpthread -L/usr/local/lib64 -lssl -lcrypto
+LFLAGS     = -lpthread
 endif
 
 
@@ -59,10 +58,26 @@ endif
 ifdef gpu
 ifdef debug
 $(OBJDIR)/GPU/GPUEngine.o: GPU/GPUEngine.cu
-	$(NVCC) -G -maxrregcount=0 --ptxas-options=-v --compile --compiler-options -fPIC -ccbin $(CXXCUDA) -m64 -g -I$(CUDA)/include -gencode=arch=compute_$(ccap),code=sm_$(ccap) -o $(OBJDIR)/GPU/GPUEngine.o -c GPU/GPUEngine.cu
+	$(NVCC) -G -maxrregcount=0 --ptxas-options=-v --compile --compiler-options -fPIC -ccbin $(CXXCUDA) -m64 -g -I$(CUDA)/include \
+	-gencode=arch=compute_60,code=sm_60 \
+	-gencode=arch=compute_61,code=sm_61 \
+	-gencode=arch=compute_70,code=sm_70 \
+	-gencode=arch=compute_80,code=sm_80 \
+	-gencode=arch=compute_86,code=sm_86 \
+	-gencode=arch=compute_89,code=sm_89 \
+	-gencode=arch=compute_90,code=sm_90 \
+	-o $(OBJDIR)/GPU/GPUEngine.o -c GPU/GPUEngine.cu
 else
 $(OBJDIR)/GPU/GPUEngine.o: GPU/GPUEngine.cu
-	$(NVCC) -maxrregcount=0 --ptxas-options=-v --compile --compiler-options -fPIC -ccbin $(CXXCUDA) -m64 -O3 -I$(CUDA)/include -gencode=arch=compute_$(ccap),code=sm_$(ccap) -o $(OBJDIR)/GPU/GPUEngine.o -c GPU/GPUEngine.cu
+	$(NVCC) -maxrregcount=0 --ptxas-options=-v --compile --compiler-options -fPIC -ccbin $(CXXCUDA) -m64 -O3 -I$(CUDA)/include \
+	-gencode=arch=compute_60,code=sm_60 \
+	-gencode=arch=compute_61,code=sm_61 \
+	-gencode=arch=compute_70,code=sm_70 \
+	-gencode=arch=compute_80,code=sm_80 \
+	-gencode=arch=compute_86,code=sm_86 \
+	-gencode=arch=compute_89,code=sm_89 \
+	-gencode=arch=compute_90,code=sm_90 \
+	-o $(OBJDIR)/GPU/GPUEngine.o -c GPU/GPUEngine.cu
 endif
 endif
 
@@ -91,4 +106,3 @@ clean:
 	@rm -f obj/*.o
 	@rm -f obj/GPU/*.o
 	@rm -f obj/hash/*.o
-
