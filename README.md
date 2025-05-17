@@ -22,25 +22,27 @@ Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
 Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
 ```
 
-If you use Cuda12, you can use it directly. Please grant execution permission (if necessary):```
+If you use Cuda12, you can use it directly. Please grant execution permission (if necessary):
+
+```
 chmod +x VanitySearch
 ```
 Clean and recompile
 ```
 make clean
-
+```
 
 If you don't know the architecture, just compile all and you can use GPU graphics cards of all architectures.
-
+```
 make gpu=0 all
-
+```
 or
-
+```
 make gpu=0 ccap=86 all
-
+```
 Single graphics cards require a new build file. GPU compilation for all architectures does not need to be changed.
 
-```
+
 ```
 ./VanitySearch -h
 VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
