@@ -22,27 +22,6 @@ Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
 Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
 ```
 
-If you use Cuda12, you can use it directly. Please grant execution permission (if necessary):
-
-```
-chmod +x VanitySearch
-```
-Clean and recompile
-```
-make clean
-```
-
-If you don't know the architecture, just compile all and you can use GPU graphics cards of all architectures.
-```
-make gpu=0 all
-```
-or
-```
-make gpu=0 ccap=86 all
-```
-Single graphics cards require a new build file. GPU compilation for all architectures does not need to be changed.
-
-
 ```
 ./VanitySearch -h
 VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
@@ -81,10 +60,6 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
  -area A:B: Search random keys in the hex range [A, B] (for rekey > 0 or restricted search).
 
 ```
-
---------------------------------------------------------------------------------------------------------------
-
- 
 
 ---------------------------------------------------------------------------------------------------------------------
 # GPU CPU Vanity Address and Jigsaw Puzzle Instances
@@ -222,95 +197,47 @@ Addr (BECH32): bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
 The v2.0 version does not require any dependencies and can be compiled directly.
 
 
-
-------------------------------------------------------------------------------------------------------------------
-```
-Random Bitcoin Puzzle #71 Private Keys
-HEX Unsolved
-Start key 0000000000000000000000000000000000000000000000400000000000000000
-Stop key 00000000000000000000000000000000000000000000007fffffffffffffffff
-400000000000000000...7fffffffffffffffff (270...271)
-
-```
-```
-Bitcoin Challenge Odds Calculator
-Entropy (bits)
-71
-Total Keys
-2361183241434822606848
-Search Speed
-3525
-Prefix
-MKeys/s (10^6)
-The odds of finding a private key within:
-Day
-7752768.720
-Week
-1107538.389
-Month
-254355.929
-Year
-21225.924
-
-
-Old Version Speed
-
-Explorer
-GPU: 1x RTX 3090
-Speed: up to 2,000 MKeys/s
-$0.50/hr
-Seeker
-GPU: 1x RTX 4090
-Speed: up to 4,000 MKeys/s
-$0.90/hr
-
-
 ----------------------------------------------------------------------------------------------------------------
 # Compilation
 
 ## Windows
-
-Intall CUDA SDK and open VanitySearch.sln in Visual C++ 2017.\
-You may need to reset your *Windows SDK version* in project properties.\
-In Build->Configuration Manager, select the *Release* configuration.\
-Build and enjoy.\
-\
-Note: The current relase has been compiled with CUDA SDK 10.0, if you have a different release of the CUDA SDK, you may need to update CUDA SDK paths in VanitySearch.vcxproj using a text editor. The current nvcc option are set up to architecture starting at 3.0 capability, for older hardware, add the desired compute capabilities to the list in GPUEngine.cu properties, CUDA C/C++, Device, Code Generation.
-
+```
+Intall CUDA SDK.
+Install  g++ (just for the CUDA SDK).
+```
 ## Linux
-
-  Intall CUDA SDK.
-  Install older g++ (just for the CUDA SDK). Depenging on the CUDA SDK version and on your Linux distribution you may need to install an older g++.
-  Install recent gcc. VanitySearch needs to be compiled and linked with a recent gcc (>=7). The current release has been compiled with gcc 7.3.0.
-  Edit the makefile and set up the appropriate CUDA SDK and compiler paths for nvcc. Or pass them as variables to `make` invocation.
-
-    ```make
-    CUDA       = /usr/local/cuda
-    CXXCUDA    = /usr/bin/g++
-    ```
-
- You can enter a list of architectrures (refer to nvcc documentation) if you have several GPU with different architecture.
-
- Set CCAP to the desired compute capability according to your hardware. See docker section for more. Compute capability 2.0 (Fermi) is deprecated for recent CUDA SDK.
-
- Go to the VanitySearch directory.
- To build CPU-only version (without CUDA support):
-
+```
+Intall CUDA SDK.
+Install  g++ (just for the CUDA SDK). 
+```
 
 
 Ubuntu/Debian system
 
-make all (for build without CUDA support)
+If you use Cuda12, you can use it directly. Please grant execution permission (if necessary):
 
+```
+chmod +x VanitySearch
+```
+Clean and recompile
+```
+make clean
+```
+
+If you don't know the architecture, just compile all and you can use GPU graphics cards of all architectures.
+```
+make gpu=0 all
+```
 or
-
+```
 make gpu=0 ccap=86 all
-
-Please fill in the form according to your graphics card computing capabilities.
+```
+If you are compiling for a single GPU architecture, just copy the build file in the directory and add it to your build document. No changes are required for GPU compiling for all architectures.
+Please fill in the form according to the compute capabilities of your graphics card.
 
 ccap=86  3080 is 86, not 8.6. Remove the decimal point from the following values.
 
-
+```
 NVIDIA A100	8	RTX A5000	8.6	GeForce RTX 3090 Ti	8.6	GeForce RTX 3080 Ti	8.6
 NVIDIA A40	8.6	RTX A4000	8.6	GeForce RTX 3090	8.6	GeForce RTX 3080	8.6
 NVIDIA A30	8	RTX A3000	8.6	GeForce RTX 3080 Ti	8.6	GeForce RTX 3070 Ti	8.6
@@ -371,6 +298,7 @@ GeForce GT 730	3.5	GeForce 710M	2.1	GeForce GTX 465	2	GeForce GT 720M	2.1
 GeForce GT 720	3.5	GeForce 610M	2.1	GeForce GT 740	3	GeForce GT 620M	2.1
 ```
 # License
+
 ```
 VanitySearch is licensed under GPLv3.
 ```
