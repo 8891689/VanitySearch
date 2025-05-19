@@ -62,7 +62,71 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ```
 
 ---------------------------------------------------------------------------------------------------------------------
-# GPU CPU Vanity Address and Jigsaw Puzzle Instances
+
+# CPU Vanity Address and Jigsaw Puzzle Instances
+```
+The single-thread speed is slightly faster than keyhunt.
+
+./VanitySearch -stop -t 1 -bits 28 -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+❀  VanitySearch v2.0
+❀  Check: No -o output file. Will save 'Results.txt'
+❀  Difficulty: 1461501637330902918203684832716283019655932542976
+❀  Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
+❀  Start Mon May 19 14:45:34 2025
+❀  Random mode
+❀  Rekey every: 1 Mkeys
+❀  Range
+❀  from : 0x8000000
+❀  to   : 0xFFFFFFF
+❀  Number of CPU thread: 1
+❀  [3.10 Mkey/s][GPU 0.00 Mkey/s][Total 2^26.18][Prob 0.0%][50% in 1.03724e+34y][Rekey 11][Found 0]  
+✿  Add: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+✿  WIF: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M82GSgY8p5EkUe
+✿  KEY: 0xD916CE8
+
+
+./VanitySearch -stop -t 4 -area 8000000:FFFFFFF -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+❀  VanitySearch v2.0
+❀  Check: No -o output file. Will save 'Results.txt'
+❀  Difficulty: 1461501637330902918203684832716283019655932542976
+❀  Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
+❀  Start Mon May 19 14:49:25 2025
+❀  Random mode
+❀  Rekey every: 1 Mkeys
+❀  Range
+❀  from : 0x8000000
+❀  to   : 0xFFFFFFF
+❀  Number of CPU thread: 4
+❀  [13.93 Mkey/s][GPU 0.00 Mkey/s][Total 2^25.73][Prob 0.0%][50% in 2.30679e+33y][Rekey 0][Found 0]  
+✿  Add: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+✿  WIF: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M82GSgY8p5EkUe
+✿  KEY: 0xD916CE8
+
+
+The keyhunt speed is 3M per second.
+
+./keyhunt -m rmd160 -f 71.hash160.txt -l compress -t 1 -s 60 -R -r 400000000000000000:800000000000000000
+[+] Version 0.2.230519 Satoshi Quest, developed by AlbertoBSD
+[+] Mode rmd160
+[+] Search compress only
+[+] Thread : 1
+[+] Stats output every 60 seconds
+[+] Random mode
+[+] N = 0x100000000
+[+] Range 
+[+] -- from : 0x400000000000000000
+[+] -- to   : 0x800000000000000000
+[+] Allocating memory for 1 elements: 0.00 MB
+[+] Bloom filter for 1 elements.
+[+] Loading data to the bloomfilter total: 0.03 MB
+[+] Sorting data ... done! 1 values were loaded and sorted
+^C] Total 1997834240 keys in 660 seconds: ~3 Mkeys/s (3027021 keys/s)
+
+
+
+```
+
+# GPU Vanity Address and Jigsaw Puzzle Instances
 
 ```
 ./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
@@ -118,7 +182,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
 ❀  Search: 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2 [Compressed]
-❀  Start Sat May 17 04:44:52 2025
+❀  Start Mon May 19 14:52:39 2025
 ❀  Random mode
 ❀  Rekey every: 50000 Mkeys
 ❀  Range
@@ -126,10 +190,11 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ❀  to   : 0x3FFFFFFFFF
 ❀  Number of CPU thread: 4
 ❀  GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
-❀  [3407.76 Mkey/s][GPU 3395.42 Mkey/s][Total 2^40.17][Prob 0.0%][50% in 9.42647e+30y][Rekey 23][Found 0]  
+❀  [3407.76 Mkey/s][GPU 3395.37 Mkey/s][Total 2^38.21][Prob 0.0%][50% in 9.42646e+30y][Rekey 5][Found 0]  
 ✿  Add: 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
 ✿  WIF: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9P3MahktLW5315v
 ✿  KEY: 0x22382FACD0
+
 
 
 ./VanitySearch -t 0 -gpu -gpuId 0 -r 8891689 18891689
@@ -137,7 +202,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 888446610539
 ❀  Search: 18891689 [Compressed]
-❀  Start Sat May 17 05:27:56 2025
+❀  Start Mon May 19 14:55:01 2025
 ❀  Random mode
 ❀  Rekey every: 8891689 Mkeys
 ❀  Range
@@ -145,28 +210,43 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ❀  to   : 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140
 ❀  Number of CPU thread: 0
 ❀  GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
-❀  [3502.31 Mkey/s][GPU 3502.31 Mkey/s][Total 2^37.85][Prob 24.3%][50% in 00:01:45][Rekey 0][Found 0]  
-✿  Add: 18891689DmVW4NwCWrs9pDg8ML9WNH8iSy
-✿  WIF: p2pkh:L2km6Bqw7FG3KZQr87atDNNjUEw4QrqUARj9ym6YPpZCERyqwD1r
-✿  KEY: 0xA5290B57B705CE014C9992754893FA86C76DDF646D4BA7B0B52FAF3E42F975F0
-❀  [3525.58 Mkey/s][GPU 3525.58 Mkey/s][Total 2^40.05][Prob 72.3%][80% in 00:01:23][Rekey 0][Found 1]  
-✿  Add: 18891689PQsZH8Y4CUqBfHCMSBr8eTxx6F
-✿  WIF: p2pkh:L4PvBFTeedgr5nv445qDThuooykJQ5Njo79dnRg4pd499i7TkVNM
-✿  KEY: 0xD61CCEA13142CD65A8106A4805E66B5A2BB21D7146E111DB8A8BF6505F16241B
-❀  [3525.57 Mkey/s][GPU 3525.57 Mkey/s][Total 2^40.62][Prob 85.1%][90% in 00:01:41][Rekey 0][Found 2]  
-✿  Add: 18891689uUPn46wojBoJPR29KTyQ5FKJ3e
-✿  WIF: p2pkh:KyS3ocNPL9qXWfWUV2oQ6KtUmdgKMQLT9z7A5wkXGMMoHgvgBe8w
-✿  KEY: 0x4205A646C594E9460D5028F7EC210E81FE1614BCDCBB9252D4F01BDDAD02507C
-❀  [3575.56 Mkey/s][GPU 3575.56 Mkey/s][Total 2^40.65][Prob 85.6%][90% in 00:01:33][Rekey 0][Found 3]  ^C
+❀  [3502.32 Mkey/s][GPU 3502.32 Mkey/s][Total 2^37.89][Prob 24.9%][50% in 00:01:43][Rekey 0][Found 0]  
+✿  Add: 18891689nzsjYYaPeY9b2Tmwzt44uCU6G8
+✿  WIF: p2pkh:L5LPW7kZwuH84qf8dhPesgBGqFHPrkQ7vuVoJ6q8hbUEPuacCnXd
+✿  KEY: 0xF22271147BDDBDA8ACEC59A840003127392A5F79BD825566507F314F74A9654E
+❀  [3568.21 Mkey/s][GPU 3568.21 Mkey/s][Total 2^38.57][Prob 36.8%][50% in 00:00:59][Rekey 0][Found 1]  
+✿  Add: 18891689Ws6YsaYuCRvCA6E9TSoFePcWvr
+✿  WIF: p2pkh:L5SeKtprrPZdmVofL87F3M186UCtNcUGWusBWe9D695XUn3QUUAn
+✿  KEY: 0xF55A4704A0389AB896C7E594BC721537A0F5100D308672DC3A5CD82DAA4FB997
+❀  [3575.39 Mkey/s][GPU 3575.39 Mkey/s][Total 2^40.34][Prob 79.1%][80% in 00:00:11][Rekey 0][Found 2]  
+✿  Add: 18891689zZBirLne4VRh9S8eh1ee6iSdG3
+✿  WIF: p2pkh:L2XECP1h9TCwmLA82djoUxVmGRUNPEY7VXHmCyqBQfAsvXS2NKjg
+✿  KEY: 0x9E32D92407AA4264956C246E99A8E4305A47C5DCD4B5DF94911051A305B8C612
+❀  [3575.35 Mkey/s][GPU 3575.35 Mkey/s][Total 2^40.35][Prob 79.4%][80% in 00:00:07][Rekey 0][Found 3]  ^C
 
 
-Please note that single CPU calculation will result in an error. You can only use GPU and CPU, or run with GPU alone. We will fix single CPU operation when we have time.For those who do not want to run the jigsaw puzzle game, or do not have a limited area search, please use my V1.0 version, which contains the repaired original version.
+It is 1G/s faster than FixedPaul's VanitySearch-Bitcrack v2.10.
+
+./vanitysearch -gpuId 0 -start 400000000000000000 -range 70 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
+VanitySearch-Bitcrack v2.10 by FixedPaul
+[keyspace]  range=2^70
+[keyspace]  start=400000000000000000
+[keyspace]    end=7FFFFFFFFFFFFFFFFF
+Search: 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU [Compressed]
+Current task START time: Mon May 19 14:15:01 2025
+GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x128 cores) Grid(8192x256)
+Starting keys set in 0.50 seconds  
+2654.9 MK/s - 2^36.39 [0.00%] - RUN: 00:00:33.9|END: Too much bro - Found: 0  
+
+
+
+Please note that -bits 256 will exceed the N of ECC and cause an error. Please do not exceed 256, or remove -bits 256 or -area A:B to ensure it is within the range of ECC. V1.0 version contains the original version that has been fixed.
 
 ```
 The results are saved to Results.txt by default
 
 
-# The original version has been repaired, and you can use the original version to search for Vanity addresses. It has been slightly optimized and the speed is still quite fast, and you don’t have to rely on the library.
+# Fixed the problem of the original version. You can use the original version to search for Vanity addresses. After a slight optimization, the speed is still quite fast. And like the V2.0 version, it does not rely on other libraries.
 ```
 ./VanitySearch -stop -t 0 -gpu bc1qmqzlduj
 VanitySearch v1.19
