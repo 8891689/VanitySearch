@@ -836,6 +836,7 @@ void VanitySearch::updateFound() {
 
 // ----------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------
 bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomorphism, bool mode) {
 
   Int k(&key);
@@ -1330,48 +1331,83 @@ void VanitySearch::checkAddressesSSE(bool compressed,Int key, int i, Point p1, P
 }
 
 // ----------------------------------------------------------------------------
-// 修改 getCPUStartingKey
+// ----------------------------------------------------------------------------
 void VanitySearch::getCPUStartingKey(int thId,Int& key,Point& startP) {
-
   if (rekey > 0) {
     // --- 在指定范围内生成随机私钥 ---
-    // secp->order 是曲线阶数 N
     if (!key.RandRange(min_range, max_range, secp->order)) {
-        // RandRange 失败，已经打印错误信息
-        // 这里可以选择退出线程或者设置一个标志让主循环知道
-        // 简单处理：设置 key 为 0，后续检查会识别为无效密钥
-        // 或者更安全：设置一个标志让主循环退出所有线程
-        // 为了简单，假设 RandRange 内部处理致命错误（比如打印错误后退出）
-        // 如果 RandRange 返回 false，表示生成失败，我们应该停止
         fprintf(stderr, "Fatal Error: CPU Thread %d failed to generate random key in range. Exiting...\n", thId);
-        endOfSearch = true; // 通知所有线程退出
+        endOfSearch = true;
         return;
     }
     // --- 结束 ---
   } else {
     // 已有逻辑：基于 startKey + offset，用于确定性搜索模式
     key.Set(&startKey);
-    Int off((int64_t)thId * CPU_GRP_SIZE); // Offset based on thread ID and group size
-    // Note: This offset method might still go outside the defined range [min_range, max_range]
-    // in non-rekey mode for subsequent blocks, if the range is small.
-    // The current implementation of non-rekey mode is primarily for searching contiguous large ranges.
-    // If a small range is specified, rekey mode (sampling) is more appropriate.
-    // We added a check in constructor that the *initial* startKey is in range for rekey=0.
-    // But subsequent keys startKey + N*CPU_GRP_SIZE * NbThreads will likely exceed it.
-    // This is a limitation of combining deterministic search with small ranges.
-    // For now, we assume the range check is primarily for the *random sampling* in rekey mode.
-    // If strict range search in non-rekey mode is needed, the iteration logic itself must be constrained.
-    off.Add((uint64_t)CPU_GRP_SIZE / 2); // Offset to the middle of the first group
+    // CPU Thread offset = thId * CPU_GRP_SIZE
+    // FindKeyCPU iterates i from 0 to CPU_GRP_SIZE-1 relative to this key.
+    Int off((uint64_t)thId); // Offset based on thread ID
+    off.Mult((uint64_t)CPU_GRP_SIZE);
     key.Add(&off);
   }
 
-  Int km(&key);
-  //km.Add((uint64_t)CPU_GRP_SIZE / 2); // This offset is already added above for rekey=0, and not needed for rekey>0 sampling
-  startP = secp->ComputePublicKey(&km);
-  if(startPubKeySpecified)
-   startP = secp->AddDirect(startP,startPubKey);
+  // 计算起始点 startP。
+  // startP 是当前线程组搜索的第一个点所对应的密钥。
+  // FindKeyCPU 中，点 pts[i] 对应私钥 (key + i).
+  // pts[0] 对应私钥 key.
+  // 所以 startP 应该是 key * G (+ startPubKey)
+  // 原来的代码计算 startP 是基于 key + CPU_GRP_SIZE / 2，这与 pts[0] 对应的私钥 (key) 不一致。
+  // pts[CPU_GRP_SIZE/2] 对应的私钥是 key + CPU_GRP_SIZE/2。
+  // 需要确认 pts 数组中点和私钥的对应关系，以及 startP 到底代表哪个点。
 
-}
+  // 根据FindKeyCPU中的点生成逻辑 (startP = secp->DoubleDirect(Gn[CPU_GRP_SIZE/2-1]); ... startP = secp->AddDirect(pts[CPU_GRP_SIZE/2-1], Gn[CPU_GRP_SIZE/2-1]); _2Gn = startP; startP = Gn[CPU_GRP_SIZE/2-1])
+  // 以及 pts[CPU_GRP_SIZE/2] = startP，和 pts[0] 的计算方式，
+  // startP 在FindKeyCPU中被用作中心点 key + CPU_GRP_SIZE/2 的点。
+  // 那么 getCPUStartingKey 中的 key 也应该用于计算 key + CPU_GRP_SIZE/2 对应的点。
+  // Int km(&key);
+  // km.Add((uint64_t)CPU_GRP_SIZE / 2); // 计算 key + CPU_GRP_SIZE / 2
+  // startP = secp->ComputePublicKey(&km); // 计算 (key + CPU_GRP_SIZE / 2) * G
+
+  // 但是 checkPrivKey 是用 key + incr_param 来计算私钥的，
+  // 且 incr_param 是 pts 的索引 i (0 to CPU_GRP_SIZE-1) 或 -i。
+  // pts[i] 对应的私钥是 (key + i).
+  // 所以 getCPUStartingKey 生成的 key 应该是线程的基准私钥 (group_base_key)。
+  // startP 应该对应于 pts[0]，也就是 key * G。
+
+  // 让我们假设 key 就是线程的 group_base_key，而 startP 对应 key * G.
+  // 在 FindKeyCPU 中，pts 数组应该通过 key * G 和 G 计算出来。
+  // 但 FindKeyCPU 看起来是通过 startP (key + CPU_GRP_SIZE/2)*G 和 G 相关的点来计算 pts 的。
+  // pts[0] = startP - (CPU_GRP_SIZE/2)*G = (key + CPU_GRP_SIZE/2)*G - (CPU_GRP_SIZE/2)*G = key * G.
+  // 这个逻辑是对的：pts[0] 对应私钥 key.
+
+  // 所以，getCPUStartingKey 应该计算 pts[0] 对应的点 (key * G)。
+  // 并生成下一个组的起始密钥 (key + CPU_GRP_SIZE)。
+  // startP 在 FindKeyCPU 中用于组内点计算的中心点，是 key + CPU_GRP_SIZE / 2 对应的点。
+  // getCPUStartingKey 应该计算 startP，并在 FindKeyCPU 循环结束时更新 key 为下一个组的起始密钥。
+
+  // 修正 getCPUStartingKey 逻辑：
+  // 生成线程的基准密钥 key
+  // 计算组的中心点 startP = (key + CPU_GRP_SIZE/2) * G
+  Int key_for_startP(&key);
+  key_for_startP.Add((uint64_t)CPU_GRP_SIZE / 2); // key_for_startP = key + CPU_GRP_SIZE/2
+  startP = secp->ComputePublicKey(&key_for_startP); // startP = (key + CPU_GRP_SIZE/2) * G
+
+  if(startPubKeySpecified)
+      startP = secp->AddDirect(startP,startPubKey); // startP = (key + CPU_GRP_SIZE/2) * G + startPubKey
+
+/*  // !!! 在这里添加 DEBUG 输出 !!!
+  if (rekey > 0) {
+      printf("DEBUG: CPU Thread %d Rekey - Generated Base Key: 0x%s (Range 0x%s to 0x%s)\n",
+             thId, key.GetBase16().c_str(), min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+  } else {
+      printf("DEBUG: CPU Thread %d Deterministic - Base Key: 0x%s\n",
+           thId, key.GetBase16().c_str());
+  }
+*/
+  // 在 FindKeyCPU 循环结束时，需要更新 key 为下一个组的基准密钥 (key + CPU_GRP_SIZE)
+  // 当前 key 已经是当前组的基准密钥了。循环结束后，它会被 key.Add((uint64_t)CPU_GRP_SIZE) 更新。
+
+} // <--- 这是 getCPUStartingKey 函数的结
 
 void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
 
@@ -1380,12 +1416,14 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
   counters[thId] = 0;
 
   // CPU Thread
+  // 確保 IntGroup 在函數退出時被銷毀
   IntGroup *grp = new IntGroup(CPU_GRP_SIZE/2+1);
 
   // Group Init
   Int  key; // This is the base key for the current group
   Point startP;
-  getCPUStartingKey(thId,key,startP);
+  // getCPUStartingKey sets the initial 'key' and calculates the initial 'startP'
+  getCPUStartingKey(thId, key, startP);
 
   Int dx[CPU_GRP_SIZE/2+1];
   Point pts[CPU_GRP_SIZE];
@@ -1400,30 +1438,51 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
 
   ph->hasStarted = true;
   ph->rekeyRequest = false;
+  ph->isRunning = true; // 顯式設置為 true
 
   // Debug: Print initial info for this thread
   //printf("Debug CPU Thread %d: Starting search from key %s\n", thId, key.GetBase16().c_str());
   //printf("Debug CPU Thread %d: Target range [%s, %s]\n", thId, min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
 
 
-  while (!endOfSearch) {
+  // >>> 主循环: 检查全局停止标志 <<<
+  while (!endOfSearch && ph->isRunning) { // 同时检查全局停止标志和线程自身的运行标志 (用于确定性模式范围结束)
 
-    if (ph->rekeyRequest) {
-      getCPUStartingKey(thId, key, startP);
-      ph->rekeyRequest = false;
-       // Debug: Print new starting key after rekey
-      //printf("Debug CPU Thread %d: Rekey requested. New starting key %s\n", thId, key.GetBase16().c_str());
-    }
+        // >>> 添加：检查 rekey 请求 <<<
+        if (ph->rekeyRequest) {
+            // Debug: printf("Debug CPU Thread %d: Rekey request received.\n", thId);
+            getCPUStartingKey(thId, key, startP); // 重新生成 key 和 startP
+            ph->rekeyRequest = false; // 重置请求标志
+        }
 
-    // Fill group
+        // --- Add deterministic mode stop check BEFORE processing the group ---
+        // If deterministic mode and the current group's base key is already beyond max_range, stop this thread.
+        // This check should happen *before* processing the group using the 'key' that was set in the previous iteration
+        // or by getCPUStartingKey.
+        Int next_group_start_check(&key);
+        // We check if the *start* of the group we *are about to process* is already out of range.
+        // If key is the start of the current group, we check if key > max_range.
+        // If key becomes the start of the *next* group *after* the loop body, the check should be on the key *before* it's updated.
+        // Let's stick to checking 'key' as the start of the *current* group.
+        if (rekey == 0 && key.IsGreater(&max_range)) {
+             // Debug: printf("Debug CPU Thread %d: Current group starts at %s, which is > max_range %s. Setting isRunning=false.\n",
+             //       thId, key.GetBase16().c_str(), max_range.GetBase16().c_str());
+             ph->isRunning = false; // Signal this thread is done
+             break; // Exit the main loop
+        }
+        // --- End deterministic mode stop check ---
+
+
+    // Fill group (calculate pts based on startP and Gn)
     int i;
     int hLength = (CPU_GRP_SIZE / 2 - 1);
 
     for (i = 0; i < hLength; i++) {
       dx[i].ModSub(&Gn[i].x, &startP.x);
     }
-    dx[i].ModSub(&Gn[i].x, &startP.x);  // For the first point
-    dx[i+1].ModSub(&_2Gn.x, &startP.x); // For the next center point
+    dx[i].ModSub(&Gn[i].x, &startP.x);  // For the first point (pts[0] corresponding to startP - (CPU_GRP_SIZE/2)*G)
+    dx[i+1].ModSub(&_2Gn.x, &startP.x); // For the next center point (corresponding to startP + (CPU_GRP_SIZE/2)*G)
+
 
     // Grouped ModInv
     grp->ModInv();
@@ -1432,14 +1491,22 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
     // We compute key in the positive and negative way from the center of the group
 
     // center point
+    // pts[CPU_GRP_SIZE/2] corresponds to (key + CPU_GRP_SIZE/2) * G + startPubKey
     pts[CPU_GRP_SIZE/2] = startP;
 
-    for (i = 0; i<hLength && !endOfSearch; i++) {
+    for (i = 0; i<hLength ; i++) { // Removed && !endOfSearch from here, check inside the inner loop
+
+      // >>> 添加内部检查：如果在计算点的过程中全局停止，提前退出 <<<
+      if (endOfSearch || !ph->isRunning) { // 检查全局和线程自身标志
+          // Debug: printf("Debug CPU Thread %d: Found endOfSearch/!isRunning during point calculation (i=%d).\n", thId, i);
+          break; // 退出点计算循环
+      }
+      // >>> 结束添加 <<<
 
       pp = startP;
       pn = startP;
 
-      // P = startP + i*G
+      // P = startP + (i+1)*G  (corresponds to keys key + CPU_GRP_SIZE/2 + (i+1))
       dy.ModSub(&Gn[i].y,&pp.y);
 
       _s.ModMulK1(&dy, &dx[i]);       // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
@@ -1453,7 +1520,8 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
       pp.y.ModMulK1(&_s);
       pp.y.ModSub(&Gn[i].y);           // ry = - p2.y - s*(ret.x-p2.x);
 
-      // P = startP - i*G  , if (x,y) = i*G then (x,-y) = -i*G
+      // P = startP - (i+1)*G  , if (x,y) = (i+1)*G then (x,-y) = -(i+1)*G
+      // corresponds to keys key + CPU_GRP_SIZE/2 - (i+1)
       dyn.Set(&Gn[i].y);
       dyn.ModNeg();
       dyn.ModSub(&pn.y);
@@ -1469,199 +1537,257 @@ void VanitySearch::FindKeyCPU(TH_PARAM *ph) {
       pn.y.ModMulK1(&_s);
       pn.y.ModAdd(&Gn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);
 
-      pts[CPU_GRP_SIZE/2 + (i+1)] = pp;
-      pts[CPU_GRP_SIZE/2 - (i+1)] = pn;
-
+      pts[CPU_GRP_SIZE/2 + (i+1)] = pp; // Indices from CPU_GRP_SIZE/2 + 1 to CPU_GRP_SIZE-1
+      pts[CPU_GRP_SIZE/2 - (i+1)] = pn; // Indices from CPU_GRP_SIZE/2 - 1 to 0
     }
 
-    // First point (startP - (GRP_SZIE/2)*G)
-    pn = startP;
-    dyn.Set(&Gn[i].y);
-    dyn.ModNeg();
-    dyn.ModSub(&pn.y);
-
-    _s.ModMulK1(&dyn, &dx[i]);
-    _p.ModSquareK1(&_s);
-
-    pn.x.ModNeg();
-    pn.x.ModAdd(&_p);
-    pn.x.ModSub(&Gn[i].x);
-
-    pn.y.ModSub(&Gn[i].x, &pn.x);
-    pn.y.ModMulK1(&_s);
-    pn.y.ModAdd(&Gn[i].y);
-
-    pts[0] = pn;
-
-    // Next start point (startP + GRP_SIZE*G)
-    pp = startP;
-    dy.ModSub(&_2Gn.y, &pp.y);
-
-    _s.ModMulK1(&dy, &dx[i+1]);
-    _p.ModSquareK1(&_s);
-
-    pp.x.ModNeg();
-    pp.x.ModAdd(&_p);
-    pp.x.ModSub(&_2Gn.x);
-
-    pp.y.ModSub(&_2Gn.x, &pp.x);
-    pp.y.ModMulK1(&_s);
-    pp.y.ModSub(&_2Gn.y);
-    startP = pp;
-
-#if 0
-    // Check
-    {
-      bool wrong = false;
-      Point p0 = secp.ComputePublicKey(&key);
-      for (int i = 0; i < CPU_GRP_SIZE; i++) {
-        if (!p0.equals(pts[i])) {
-          wrong = true;
-          printf("[%d] wrong point\n",i);
-        }
-        p0 = secp->NextKey(p0);
-      }
-      if(wrong) exit(0);
-    }
-#endif
-
-    // Check addresses
-    if (useSSE) {
-
-      for (int i = 0; i < CPU_GRP_SIZE && !endOfSearch; i += 4) {
-           // Calculate the actual keys being checked in this SSE group
-           Int current_key_base(&key); // base key for this group
-           Int key1(current_key_base); key1.Add((uint64_t)i);
-           Int key2(current_key_base); key2.Add((uint64_t)(i+1));
-           Int key3(current_key_base); key3.Add((uint64_t)(i+2));
-           Int key4(current_key_base); key4.Add((uint64_t)(i+3));
-
-            // Debug: Print the keys being checked in this SSE block
-            //printf("Debug CPU Thread %d SSE Block (i=%d): Checking keys %s, %s, %s, %s against range [%s, %s]\n",
-                   //ph->threadId, i,
-                   //key1.GetBase16().c_str(), key2.GetBase16().c_str(),
-                   //key3.GetBase16().c_str(), key4.GetBase16().c_str(),
-                  // min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
-
-
-        switch (searchMode) {
-          case SEARCH_COMPRESSED:
-            checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
-            break;
-          case SEARCH_UNCOMPRESSED:
-            checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
-            break;
-          case SEARCH_BOTH:
-            checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
-            checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
-            break;
-        }
-
-      }
-
-    } else { // Non-SSE
-
-      for (int i = 0; i < CPU_GRP_SIZE && !endOfSearch; i ++) {
-           // Calculate the actual key being checked
-           Int current_key(&key); // base key for this group
-           current_key.Add((uint64_t)i); // This is the actual key being considered
-
-           // Debug: Print the key being checked
-           //printf("Debug CPU Thread %d (i=%d): Checking key %s against range [%s, %s]\n",
-                  //ph->threadId, i,
-                  //current_key.GetBase16().c_str(),
-                  //min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
-
-        switch (searchMode) {
-        case SEARCH_COMPRESSED:
-          checkAddresses(true, key, i, pts[i]);
-          break;
-        case SEARCH_UNCOMPRESSED:
-          checkAddresses(false, key, i, pts[i]);
-          break;
-        case SEARCH_BOTH:
-          checkAddresses(true, key, i, pts[i]);
-          checkAddresses(false, key, i, pts[i]);
-          break;
-        }
-
-      }
-
-    }
-
-    // Update key to the base key of the *next* group
-    key.Add((uint64_t)CPU_GRP_SIZE);
-    counters[thId]+= 6*CPU_GRP_SIZE; // Point + endo #1 + endo #2 + Symetric point + endo #1 + endo #2
-
-    // Optional: Add optimization for skipping whole groups or stopping thread
-    // Int next_group_start(&key); // 'key' is already the start of the next group here
-    // if (next_group_start.IsGreater(&max_range)) {
-    //      printf("Debug CPU Thread %d: Next group starts at %s, which is > max_range %s. Signalling end.\n",
-    //             ph->threadId, next_group_start.GetBase16().c_str(), max_range.GetBase16().c_str());
-    //      // This thread should stop or wait. Setting endOfSearch affects all threads.
-    //      // For deterministic search restricted to a range, a single thread finishing its range
-    //      // means it should stop, but others might continue. This needs per-thread stop logic.
-    //      // For now, let's just print the debug message. The loop condition !endOfSearch will eventually catch a global stop.
-    //      // If we need per-thread stop, 'isRunning' in TH_PARAM could be set to false here.
-    // }
-  }
-
-  //ph->isRunning = false;
-   // Debug: Print thread exiting
-   //printf("Debug CPU Thread %d: Exiting FindKeyCPU loop.\n", thId);
-
-}
-
-
-// ----------------------------------------------------------------------------
-
-// 修改 getGPUStartingKeys
-void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int *keys, Point *p) {
-
-  for (int i = 0; i < nbThread; i++) {
-    if (rekey > 0) {
-      // --- 在指定范围内生成随机私钥 ---
-      if (!keys[i].RandRange(min_range, max_range, secp->order)) {
-          // RandRange 失败
-          fprintf(stderr, "Fatal Error: GPU Thread %d failed to generate random key in range. Exiting...\n", thId);
-          endOfSearch = true; // 通知所有线程退出
-          return;
-      }
-      // --- 结束 ---
+    // First point (pts[0] corresponding to startP - (CPU_GRP_SIZE/2)*G)
+    // Check if the inner loop above exited early
+    if (endOfSearch || !ph->isRunning) {
+        // If point calculation was interrupted, skip address checking for this group
+        // Debug: printf("Debug CPU Thread %d: Skipping address check due to early point calc exit.\n", thId);
+        // Continue to the next iteration of the main while loop, which will re-check conditions
     } else {
-      // 已有逻辑：基于 startKey + offset，用于确定性搜索模式
-      keys[i].Set(&startKey);
-      // 这里的偏移量计算方式需要与 CPU 线程的 offset 一致，以便线程之间搜索连续的金钥空间
-      // CPU Thread offset = thId * CPU_GRP_SIZE + CPU_GRP_SIZE / 2
-      // GPU Thread offset = ?
-      // 原来的 GPU offset 计算: Int offT((uint64_t)i); offT.ShiftL(80); Int offG((uint64_t)thId); offG.ShiftL(112);
-      // 这看起来是根据线程 ID 和 GPU 组 ID 生成非常大的、不连续的偏移。
-      // 让我们使用一个更简单的、与 CPU 线程偏移量相容的方案：
-      // 总线程索引 = GPU装置ID * GPUDeviceThreads + 当前GPU线程 ID * nbThreadPerGroup + threadIdx.x (within block)
-      // 这个更复杂，因为 GPU 有 blockIdx 和 threadIdx。
-      // 考虑到 Rekey 模式才是为范围搜索设计的，并且它完全随机采样，我们主要修改 Rekey 模式。
-      // 非 Rekey 模式保持原有逻辑（或者简单地检查生成的起始密钥是否在范围内，超范围就跳過或退出）。
-      // Let's stick to modifying only the rekey>0 part for range sampling.
-      // For rekey=0, the original offset logic determines the search space.
 
-      // Original GPU offset logic (preserved for rekey == 0):
-      Int offT((uint64_t)i); // Thread index within this GPU instance's total threads
-      offT.ShiftL(80); // Original large shifts
-      Int offG((uint64_t)thId); // GPU instance ID
-      offG.ShiftL(112); // Original large shifts
-      keys[i].Add(&offT);
-      keys[i].Add(&offG);
+        // Finish calculating pts[0]
+        pn = startP;
+        dyn.Set(&Gn[i].y); // Gn[i] here is Gn[CPU_GRP_SIZE/2-1] because i reached hLength (CPU_GRP_SIZE/2-1) in the loop
+        dyn.ModNeg();
+        dyn.ModSub(&pn.y);
+
+        _s.ModMulK1(&dyn, &dx[i]); // dx[i] here is dx[CPU_GRP_SIZE/2-1]
+        _p.ModSquareK1(&_s);
+
+        pn.x.ModNeg();
+        pn.x.ModAdd(&_p);
+        pn.x.ModSub(&Gn[i].x);
+
+        pn.y.ModSub(&Gn[i].x, &pn.x);
+        pn.y.ModMulK1(&_s);
+        pn.y.ModAdd(&Gn[i].y);
+
+        pts[0] = pn;
+
+        // Next start point calculation (startP + GRP_SIZE*G)
+        // startP should be updated to the center point of the *next* group
+        // The next center point is current startP + (CPU_GRP_SIZE/2)*G + (CPU_GRP_SIZE/2)*G = startP + CPU_GRP_SIZE*G
+        // And pts[CPU_GRP_SIZE] should be this point? No, the next startP is based on dx[i+1] which used _2Gn (CPU_GRP_SIZE * G)
+        // The calculation below looks like it computes pts[CPU_GRP_SIZE], let's re-verify the original intent.
+        // Original comment: "_2Gn = CPU_GRP_SIZE*G", "startP = secp->DoubleDirect(Gn[CPU_GRP_SIZE/2-1]);" (this sets _2Gn?) No, the comment is wrong.
+        // Let's trace: _2Gn is calculated *once* in VanitySearch constructor as CPU_GRP_SIZE*G.
+        // In the loop: dx[i+1].ModSub(&_2Gn.x, &startP.x); -> This suggests we are computing the line between startP and startP + CPU_GRP_SIZE*G (_2Gn).
+        // The resulting point 'pp' seems to be startP + CPU_GRP_SIZE*G. This is the correct center for the *next* group.
+        // Original code seems to correctly update startP for the next iteration here.
+
+        pp = startP; // Start from the current center point
+        dy.ModSub(&_2Gn.y, &pp.y); // Vector from current center to (current center + CPU_GRP_SIZE*G)
+
+        _s.ModMulK1(&dy, &dx[i+1]); // dx[i+1] uses _2Gn, so it's ModInv( (_2Gn.x - startP.x) )
+        _p.ModSquareK1(&_s);
+
+        pp.x.ModNeg();
+        pp.x.ModAdd(&_p);
+        pp.x.ModSub(&_2Gn.x); // Should be startP.x + (startP + CPU_GRP_SIZE*G).x ? No, check point addition formula.
+                             // R = P + Q. s = (Q.y-P.y)/(Q.x-P.x). Rx = s^2 - P.x - Q.x. Ry = Q.y + s*(Rx - Q.x).
+                             // Here P=startP, Q=_2Gn (relative to origin). For startP + _2Gn, P=startP, Q=_2Gn.
+                             // The calculation looks right for R = startP + _2Gn.
+                             // R.x = s^2 - startP.x - _2Gn.x
+                             // R.y = _2Gn.y + s*(R.x - _2Gn.x)
+
+        // The original code for Ry is: pp.y.ModSub(&_2Gn.x, &pp.x); pp.y.ModMulK1(&_s); pp.y.ModSub(&_2Gn.y);
+        // Let's rewrite the formula: Ry = s * (Q.x - R.x) - Q.y
+        // Here Q is _2Gn. So Ry = s * (_2Gn.x - R.x) - _2Gn.y.
+        // This matches the original code's calculation of 'pp.y'.
+        // So 'pp' becomes startP + CPU_GRP_SIZE * G. This is the correct 'startP' for the *next* group.
+
+        pp.y.ModSub(&_2Gn.x, &pp.x);
+        pp.y.ModMulK1(&_s);
+        pp.y.ModSub(&_2Gn.y);
+        startP = pp; // Update startP for the next iteration
+
+        // Check addresses
+        if (useSSE) {
+            // SSE 部分的代码
+            for (int i = 0; i < CPU_GRP_SIZE; i += 4) { // Note: Still need to check endOfSearch inside this loop
+
+                 // >>> 添加内部检查 <<<
+                 if (endOfSearch || !ph->isRunning) { // 检查全局和线程自身标志
+                     // Debug: printf("Debug CPU Thread %d: Found endOfSearch/!isRunning during SSE batch (i=%d).\n", thId, i);
+                     break; // 退出当前批次循环
+                 }
+                 // >>> 结束添加 <<<
+
+                 // Calculate the actual keys being checked in this SSE group
+                 // key is the base key for the current group (pts[0] corresponds to key)
+                 // pts[i] corresponds to key + i
+                 // Int current_key_base(&key); // Not strictly needed, can work with key directly
+
+                 // Debug: Print the keys being checked in this SSE block (Optional)
+                 // Int key1(key); key1.Add((uint64_t)i);
+                 // Int key2(key); key2.Add((uint64_t)(i+1));
+                 // Int key3(key); key3.Add((uint64_t)(i+2));
+                 // Int key4(key); key4.Add((uint64_t)(i+3));
+                 // printf("Debug CPU Thread %d SSE Block (i=%d): Checking keys %s, %s, %s, %s against range [%s, %s]\n",
+                 //        ph->threadId, i,
+                 //        key1.GetBase16().c_str(), key2.GetBase16().c_str(),
+                 //        key3.GetBase16().c_str(), key4.GetBase16().c_str(),
+                 //       min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+
+
+                 switch (searchMode) {
+                   case SEARCH_COMPRESSED:
+                     checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+                     break;
+                   case SEARCH_UNCOMPRESSED:
+                     checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+                     break;
+                   case SEARCH_BOTH:
+                     checkAddressesSSE(true, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+                     if (endOfSearch || !ph->isRunning) break; // Optional: Check again between calls if both modes are searched
+                     checkAddressesSSE(false, key, i, pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+                     break;
+                 } // end switch
+
+             } // end for i += 4 (SSE batch loop)
+
+        } else { // Non-SSE 部分的代码 (就是你提供的那个 snippet 所在的部分)
+
+             for (int i = 0; i < CPU_GRP_SIZE; i ++) { // Note: Still need to check endOfSearch inside this loop
+
+                 // >>> 添加内部检查 <<<
+                 if (endOfSearch || !ph->isRunning) { // 检查全局和线程自身标志
+                     // Debug: printf("Debug CPU Thread %d: Found endOfSearch/!isRunning during Non-SSE batch (i=%d).\n", thId, i);
+                     break; // 退出当前批次循环
+                 }
+                 // >>> 结束添加 <<<
+
+                 // Calculate the actual key being checked
+                 // key is the base key for the current group (pts[0] corresponds to key)
+                 // pts[i] corresponds to key + i
+                 // Int current_key(&key); // Not strictly needed
+                 // current_key.Add((uint64_t)i); // This is the actual key being considered
+
+                 // Debug: Print the key being checked (Optional)
+                 // printf("Debug CPU Thread %d (i=%d): Checking key %s against range [%s, %s]\n",
+                 //        ph->threadId, i,
+                 //        current_key.GetBase16().c_str(),
+                 //        min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+
+                 switch (searchMode) {
+                 case SEARCH_COMPRESSED:
+                   checkAddresses(true, key, i, pts[i]);
+                   break;
+                 case SEARCH_UNCOMPRESSED:
+                   checkAddresses(false, key, i, pts[i]);
+                   break;
+                 case SEARCH_BOTH:
+                   checkAddresses(true, key, i, pts[i]);
+                   if (endOfSearch || !ph->isRunning) break; // Optional: Check again between calls
+                   checkAddresses(false, key, i, pts[i]);
+                   break;
+                 } // end switch
+
+             } // end for i++ (Non-SSE batch loop)
+
+        } // end if (useSSE) else
+
+        // 在批次处理循环结束后，再次检查 endOfSearch 或 !ph->isRunning。
+        // 如果内层循环因为这些标志提前退出，这里的 check 会是 false，不会执行后面的 key.Add 和 counters 逻辑
+        // 并会跳到外层 while 循环的条件检查，从而可能退出线程。
+        // if (endOfSearch || !ph->isRunning) {
+        //     Debug: printf("Debug CPU Thread %d: Batch processing exited due to endOfSearch/!isRunning.\n", thId);
+        // }
+
+
+        // Update key to the base key of the *next* group
+        // This only happens if the batch processing completed without hitting endOfSearch / !ph->isRunning
+        key.Add((uint64_t)CPU_GRP_SIZE);
+        counters[thId]+= 6ULL * CPU_GRP_SIZE; // Point + endo #1 + endo #2 + Symetric point + endo #1 + endo #2
+
+        // --- 原有的确定性模式范围检查 ---
+        // 检查下一组的起始 key 是否超出了范围
+        // 这个检查放在这里是因为 key 刚刚被更新为下一组的起始值
+        if (rekey == 0) {
+            // key is already the start of the next group here
+            if (key.IsGreater(&max_range)) {
+                 // Debug: printf("Debug CPU Thread %d: Next group starts at %s, which is > max_range %s. Setting isRunning=false.\n",
+                 //       thId, key.GetBase16().c_str(), max_range.GetBase16().c_str());
+                 ph->isRunning = false; // Signal this thread is done its range
+                 // No need for break here, the main while loop condition (!endOfSearch && ph->isRunning) will catch it
+                 // in the next iteration. However, adding break makes it exit immediately. Let's add break for faster exit.
+                 break; // Exit the main thread loop
+            }
+        }
+        // --- 结束范围检查 ---
+
+    } // end if (!(endOfSearch || !ph->isRunning)) after point calculation block
+
+
+  } // end while (!endOfSearch && ph->isRunning) (Main thread loop)
+
+
+  // >>> 在 while 循环结束后，确保设置 isRunning 为 false <<<
+  // 无论循环是因为 endOfSearch, !ph->isRunning, 或确定性范围结束而退出，都确保这个标志被设置
+  ph->isRunning = false;
+  // Debug: printf("Debug CPU Thread %d: Exiting FindKeyCPU function. isRunning set to false.\n", thId);
+
+  // Clean up allocated memory
+  delete grp; // Delete the IntGroup object
+
+  // Note: The Point and Int arrays (p, keys) for GPU threads are deleted in FindKeyGPU.
+  // The Point arrays (Gn, _2Gn) are global.
+  // The Int array (dx), Point array (pts) and Ints (dy, dyn, _s, _p) are local to the function and will be cleaned up automatically.
+  // The parameters 'ph' are allocated in Search() and freed there.
+
+} // end VanitySearch::FindKeyCPU
+// ----------------------------------------------------------------------------
+void VanitySearch::getGPUStartingKeys(int thId, int groupSize, int nbThread, Int *keys, Point *p) {
+    // thId is the GPU instance ID (0, 1, 2... if using multiple GPUs)
+    // nbThread is the number of threads *launched on this specific GPU instance*
+
+    for (int i = 0; i < nbThread; i++) {
+        if (rekey > 0) {
+            // --- 在指定范围内生成随机私钥 (Random mode) ---
+            // RandRange 应该在这个范围内生成 key
+            if (!keys[i].RandRange(min_range, max_range, secp->order)) {
+                // 如果生成失败，说明范围有问题或 RandRange 有bug，需要致命退出
+                fprintf(stderr, "Fatal Error: GPU Instance %d, Thread %d failed to generate random key in range [0x%s, 0x%s]. Exiting...\n",
+                        thId, i, min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+                endOfSearch = true; // 通知所有线程退出
+                return; // 返回，此线程将结束
+            }
+            // --- 添加简单调式打印：显示随机生成的基线私钥 ---
+            // 打印到 stderr 避免干擾主狀態輸出
+       //     fprintf(stderr, "DEBUG GPU Instance %d, Thread %d: Random Base Key generated: 0x%s (Range [0x%s, 0x%s])\n",
+         //           thId, i, keys[i].GetBase16().c_str(), min_range.GetBase16().c_str(), max_range.GetBase16().c_str());
+            // --- 结束简单调式打印 ---
+
+        } else {
+            // 已有逻辑：基于 startKey + offset (Deterministic mode)
+            keys[i].Set(&startKey);
+            // Original GPU offset logic (preserved for rekey == 0):
+            // Note: This offset logic seems to create large, non-contiguous jumps for threads/GPUs
+            Int offT((uint64_t)i); // Thread index within this GPU instance's total threads
+            offT.ShiftL(80); // Original large shifts
+            Int offG((uint64_t)thId); // GPU instance ID
+            offG.ShiftL(112); // Original large shifts
+            keys[i].Add(&offT);
+            keys[i].Add(&offG);
+            // --- Optional: Add simple debug print for deterministic GPU start keys if needed ---
+            // fprintf(stderr, "DEBUG GPU Instance %d, Thread %d: Deterministic Base Key: 0x%s\n", thId, i, keys[i].GetBase16().c_str());
+            // --- End optional debug print ---
+        }
+        // --- 原始逻辑：计算组的起始点 ---
+        // Starting key is at the middle of the group (STEP_SIZE is used by GPU Kernel iteration)
+        Int k(keys + i);
+        k.Add((uint64_t)(STEP_SIZE / 2)); // Use STEP_SIZE instead of GRP_SIZE for GPU
+        p[i] = secp->ComputePublicKey(&k);
+        if (startPubKeySpecified)
+          p[i] = secp->AddDirect(p[i], startPubKey);
     }
-    // --- 原始逻辑：将起始 key 偏移到组的中间 ---
-    Int k(keys + i);
-    // Starting key is at the middle of the group (STEP_SIZE is used by GPU Kernel iteration)
-    k.Add((uint64_t)(STEP_SIZE / 2)); // Use STEP_SIZE instead of GRP_SIZE for GPU
-    p[i] = secp->ComputePublicKey(&k);
-    if (startPubKeySpecified)
-      p[i] = secp->AddDirect(p[i], startPubKey);
-  }
-
 }
+
+
 void VanitySearch::FindKeyGPU(TH_PARAM *ph) {
 
   bool ok = true;
