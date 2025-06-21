@@ -9,17 +9,19 @@ I only fixed the following issues:
 4. Fixed the error in converting the 16-bit private key to a WIF private key.
 5. Fixed This issue was fixed by replacing the insecure weak random number generator.
 6. Added a feature to divide the private key area for puzzle puzzles, adding -r to regenerate random numbers when the specified private key area reaches a certain quantity, improving the probability of puzzle hits. The more random, the slower (the smaller the value after -r, the slower),and this program or other programs can only use point addition ECC high-speed calculations, not normal standard calculations.
+7. Add -e option to enable internal homomorphism. This feature is disabled by default in some areas. You need to enable it actively to get high-speed operation. When adding an address, the program removes the value behind it (the amount value). Batch operations only support compressed and uncompressed types starting with 1, 3, and BC1Q. One of them, the address type! You need to extract addresses starting with 1 or 3.
+8. Repaired and modified the core, optimized the doubling of the curve operation in terms of CPU support, and increased the speed several times. It is limited to executing tasks within the region to avoid internal homomorphism. The program is still in the experimental stage and there may be ignorance problems.
 
-
-7. Verify the results
+9. Verify the results
 
 ``` 
-./VanitySearch -cp 1
-PrivAddr: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
-PubKey: 0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
-Addr (P2PKH): 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
-Addr (P2SH): 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
-Addr (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+ ./VanitySearch -cp 1
+Key  (HEX)  : KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+Pub  (HEX)  : 0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+Add (P2PKH) : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+Add  (P2SH) : 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
+Add (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+
 ```
 
 ```
@@ -29,7 +31,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
              [-o outputfile] [-m maxFound] [-ps seed] [-s seed] [-t nbThread]
              [-nosse] [-r rekey] [-check] [-kp] [-sp startPubKey]
              [-rp privkey partialkeyfile]
-             [-bits N] [-area A:B] [prefix]
+             [-bits N | -area A:B] [-e] [prefix]
 
  prefix: prefix to search (Can contains wildcard '?' or '*')
  -v: Print version
@@ -45,7 +47,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
  -m: Specify maximun number of prefixes found by each kernel call
  -s seed: Specify a seed for the base key, default is random
  -ps seed: Specify a seed concatened with a crypto secure random seed
- -t threadNumber: Specify number of CPU thread, default is number of core
+ -t threadNumber: Specify number of CPU thread, default is 1.
  -nosse: Disable SSE hash function
  -l: List cuda enabled devices
  -check: Check CPU and GPU kernel vs CPU
@@ -56,8 +58,13 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
  -sp startPubKey: Start the search with a pubKey (for private key splitting)
  -r rekey: Rekey interval in MegaKey, default is disabled (deterministic search).
            When > 0, sample random keys within the specified range.
- -bits N: Search random keys in the range [2^(N-1), 2^N-1] (for rekey > 0 or restricted search).
- -area A:B: Search random keys in the hex range [A, B] (for rekey > 0 or restricted search).
+ -bits N: Search keys in the range [2^(N-1), 2^N-1].
+           Defaults to strict range checking. Use -e to enable optimizations.
+ -area A:B: Search keys in the hex range [A, B].
+           Defaults to strict range checking. Use -e to enable optimizations.
+ -e: Enable optimized search mode (uses endomorphisms and symmetry)
+           even when -bits or -area is specified (overrides their default strict checking).
+
 
 ```
 
@@ -238,9 +245,6 @@ GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x128 cores) Grid(8192x256)
 Starting keys set in 0.50 seconds  
 2654.9 MK/s - 2^36.39 [0.00%] - RUN: 00:00:33.9|END: Too much bro - Found: 0  
 
-
-
-Please note that -bits 256 will exceed the N of ECC and cause an error. Please do not exceed 256, or remove -bits 256 or -area A:B to ensure it is within the range of ECC. V1.0 version contains the original version that has been fixed.
 
 ```
 The results are saved to Results.txt by default
