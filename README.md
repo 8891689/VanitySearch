@@ -11,8 +11,9 @@ I only fixed the following issues:
 6. Added a feature to divide the private key area for puzzle puzzles, adding -r to regenerate random numbers when the specified private key area reaches a certain quantity, improving the probability of puzzle hits. The more random, the slower (the smaller the value after -r, the slower),and this program or other programs can only use point addition ECC high-speed calculations, not normal standard calculations.
 7. Add -e option to enable internal homomorphism. This feature is disabled by default in some areas. You need to enable it actively to get high-speed operation. When adding an address, the program removes the value behind it (the amount value). Batch operations only support compressed and uncompressed types starting with 1, 3, and BC1Q. One of them, the address type! You need to extract addresses starting with 1 or 3.
 8. Repaired and modified the core, optimized the doubling of the curve operation in terms of CPU support, and increased the speed several times. It is limited to executing tasks within the region to avoid internal homomorphism. The program is still in the experimental stage and there may be ignorance problems.
+9. Added -a, -h, and -p options for batch or single searches, with auto-sorting and an AVX2 computation library, significantly boosting speed to become the fastest program on the market. For GPUs not at full load, add -g 512,256 and other grid types to fully load the cores. Only a suitable grid is the best choice. For GPU searches, use -r random mode; incremental mode is only for the CPU. Please use the compiled program, which is the latest version.
 
-9. Verify the results
+10. Verify the results
 
 ``` 
  ./VanitySearch -cp 1
@@ -25,46 +26,54 @@ Add (BECH32): bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
 ```
 
 ```
-./VanitySearch -h
-VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
-             [-gpuId gpuId1[,gpuId2,...]] [-g g1x,g1y,[,g2x,g2y,...]]
-             [-o outputfile] [-m maxFound] [-ps seed] [-s seed] [-t nbThread]
-             [-nosse] [-r rekey] [-check] [-kp] [-sp startPubKey]
-             [-rp privkey partialkeyfile]
-             [-bits N | -area A:B] [-e] [prefix]
+./VanitySearch -help
+VanitySearch v3.0 - Help
 
- prefix: prefix to search (Can contains wildcard '?' or '*')
- -v: Print version
- -u: Search uncompressed addresses
- -b: Search both uncompressed or compressed addresses
- -c: Case unsensitive search
- -gpu: Enable gpu calculation
- -stop: Stop when all prefixes are found
- -i inputfile: Get list of prefixes to search from specified file
- -o outputfile: Output results to the specified file
- -gpu gpuId1,gpuId2,...: List of GPU(s) to use, default is 0
- -g g1x,g1y,g2x,g2y, ...: Specify GPU(s) kernel gridsize, default is 8*(MP number),128
- -m: Specify maximun number of prefixes found by each kernel call
- -s seed: Specify a seed for the base key, default is random
- -ps seed: Specify a seed concatened with a crypto secure random seed
- -t threadNumber: Specify number of CPU thread, default is 1.
- -nosse: Disable SSE hash function
- -l: List cuda enabled devices
- -check: Check CPU and GPU kernel vs CPU
- -cp privKey: Compute public key (privKey in hex hormat)
- -ca pubKey: Compute address (pubKey in hex hormat)
- -kp: Generate key pair
- -rp privkey partialkeyfile: Reconstruct final private key(s) from partial key(s) info.
- -sp startPubKey: Start the search with a pubKey (for private key splitting)
- -r rekey: Rekey interval in MegaKey, default is disabled (deterministic search).
-           When > 0, sample random keys within the specified range.
- -bits N: Search keys in the range [2^(N-1), 2^N-1].
-           Defaults to strict range checking. Use -e to enable optimizations.
- -area A:B: Search keys in the hex range [A, B].
-           Defaults to strict range checking. Use -e to enable optimizations.
- -e: Enable optimized search mode (uses endomorphisms and symmetry)
-           even when -bits or -area is specified (overrides their default strict checking).
+Usage:
+  ./VanitySearch [options] [prefix]
+  ./VanitySearch [options] -a <address_file>
+  ./VanitySearch [options] -p <pubkey_file>
+  ./VanitySearch [options] -h <hash160_file>
 
+Core Options:
+  [prefix]             Prefix to search (e.g., 1Bitcoin). Can contain wildcard '?' or '*'.
+  -a <file>            Input file with list of address prefixes to search, one per line.
+  -h <file>            Input file with HASH160s (hex), one per line.
+  -p <file>            Input file with public key prefixes (hex), one per line.
+  -o <file>            Output file for results (default: Results.txt).
+  -stop                Stop when all targets from all input sources are found.
+
+Search Mode:
+  -u                   Search for uncompressed public keys/addresses (default: compressed).
+  -b                   Search for both compressed and uncompressed keys/addresses.
+  -c                   Case-insensitive search for address prefixes.
+
+Performance & Hardware:
+  -gpu                 Enable GPU acceleration.
+  -t <threads>         Number of CPU threads to use (default: 0 if -gpu is used, 1 otherwise).
+  -gpuId <id1,id2>     Comma-separated list of GPU device IDs to use (default: 0).
+  -g <x1,y1,x2,y2>     Grid size (XxY) for each GPU (default: auto-configured).
+
+Key Generation & Range:
+  -s <seed>            Specify a seed for deterministic key generation.
+  -r <Mkeys>           Enable random mode. Generates a new random key every <Mkeys> million keys.
+                       Random keys are sampled within the specified range.
+  -bits <N>            Search keys in the range [2^(N-1), 2^N-1].
+  -area <hexA:hexB>    Search keys in the hexadecimal range from A to B.
+  -e                   Enable performance optimizations (endomorphisms) when a specific key range
+                       (-bits or -area) is set. By default, range search is strict.
+  -sp <pubkey>         Start search from a base public key (for key splitting).
+
+Utility Commands:
+  -v                   Print version information.
+  -l                   List available CUDA-enabled GPU devices.
+  -check               Perform a self-check of CPU and GPU cryptographic functions.
+  -kp [-s <seed>]      Generate a key pair from an optional seed.
+  -cp <privkey>        Compute public key and addresses from a private key (WIF or hex).
+  -ca <pubkey>         Compute addresses from a public key (hex).
+  -rp <privkey> <file> Reconstruct final private key from a partial key file.
+
+Technical Support      https://github.com/8891689
 
 ```
 
@@ -74,7 +83,7 @@ VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
 ```
 The single-thread speed is slightly faster than keyhunt.
 
-./VanitySearch -stop -t 1 -bits 28 -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+./VanitySearch -stop -t 1 -bits 28 -e -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
@@ -86,13 +95,13 @@ The single-thread speed is slightly faster than keyhunt.
 ❀  from : 0x8000000
 ❀  to   : 0xFFFFFFF
 ❀  Number of CPU thread: 1
-❀  [3.10 Mkey/s][GPU 0.00 Mkey/s][Total 2^26.18][Prob 0.0%][50% in 1.03724e+34y][Rekey 11][Found 0]  
+❀  [5.10 Mkey/s][GPU 0.00 Mkey/s][Total 2^26.18][Prob 0.0%][50% in 1.03724e+34y][Rekey 11][Found 0]  
 ✿  Add: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
 ✿  WIF: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M82GSgY8p5EkUe
 ✿  KEY: 0xD916CE8
 
 
-./VanitySearch -stop -t 4 -area 8000000:FFFFFFF -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
+./VanitySearch -stop -t 4 -area 8000000:FFFFFFF -e -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
@@ -104,7 +113,7 @@ The single-thread speed is slightly faster than keyhunt.
 ❀  from : 0x8000000
 ❀  to   : 0xFFFFFFF
 ❀  Number of CPU thread: 4
-❀  [13.93 Mkey/s][GPU 0.00 Mkey/s][Total 2^25.73][Prob 0.0%][50% in 2.30679e+33y][Rekey 0][Found 0]  
+❀  [20.93 Mkey/s][GPU 0.00 Mkey/s][Total 2^25.73][Prob 0.0%][50% in 2.30679e+33y][Rekey 0][Found 0]  
 ✿  Add: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
 ✿  WIF: p2pkh:KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M82GSgY8p5EkUe
 ✿  KEY: 0xD916CE8
@@ -130,13 +139,12 @@ The keyhunt speed is 3M per second.
 ^C] Total 1997834240 keys in 660 seconds: ~3 Mkeys/s (3027021 keys/s)
 
 
-
 ```
 
 # GPU Vanity Address and Jigsaw Puzzle Instances
 
 ```
-./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
+./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -e -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
@@ -153,7 +161,7 @@ The keyhunt speed is 3M per second.
 
 3080 after stabilization
 
-./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
+./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -e -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
@@ -168,7 +176,7 @@ The keyhunt speed is 3M per second.
 ❀  GPU: GPU #0 NVIDIA GeForce RTX 3080 (68x0 cores) Grid(544x128)
 ❀  [3532.10 Mkey/s][GPU 3529.02 Mkey/s][Total 2^38.25][Prob 0.0%][50% in 9.09462e+30y][Rekey 0][Found 0]  ^C
 
-./VanitySearch -t 0 -gpu -gpuId 0 -area 400000000000000000:7fffffffffffffffff -r 999999 1PWo3JeB9jrGw
+./VanitySearch -t 0 -gpu -gpuId 0 -area 400000000000000000:7fffffffffffffffff -e -r 999999 1PWo3JeB9jrGw
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 10054102514374868992
@@ -184,7 +192,7 @@ The keyhunt speed is 3M per second.
 ❀  [3529.00 Mkey/s][GPU 3529.00 Mkey/s][Total 2^37.49][Prob 0.0%][50% in 62.6197y][Rekey 0][Found 0]  ^C
 
 
-./VanitySearch -stop -t 4 -gpu -bits 38 -r 50000 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
+./VanitySearch -stop -t 4 -gpu -bits 38 -e -r 50000 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
@@ -204,7 +212,7 @@ The keyhunt speed is 3M per second.
 
 
 
-./VanitySearch -t 0 -gpu -gpuId 0 -r 8891689 18891689
+./VanitySearch -t 0 -e -gpu -gpuId 0 -r 8891689 18891689
 ❀  VanitySearch v2.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 888446610539
