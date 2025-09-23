@@ -84,7 +84,7 @@ Technical Support      https://github.com/8891689
 The single-thread speed is slightly faster than keyhunt.
 
 ./VanitySearch -stop -t 1 -bits 28 -e -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
 ❀  Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
@@ -102,7 +102,7 @@ The single-thread speed is slightly faster than keyhunt.
 
 
 ./VanitySearch -stop -t 4 -area 8000000:FFFFFFF -e -r 1 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
 ❀  Search: 12jbtzBb54r97TCwW3G1gCFoumpckRAPdY [Compressed]
@@ -145,7 +145,7 @@ The keyhunt speed is 3M per second.
 
 ```
 ./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -e -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
 ❀  Search: 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU [Compressed]
@@ -162,7 +162,7 @@ The keyhunt speed is 3M per second.
 3080 after stabilization
 
 ./VanitySearch -t 1 -gpu -gpuId 0 -bits 71 -e -r 999999 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
 ❀  Search: 1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU [Compressed]
@@ -177,7 +177,7 @@ The keyhunt speed is 3M per second.
 ❀  [3532.10 Mkey/s][GPU 3529.02 Mkey/s][Total 2^38.25][Prob 0.0%][50% in 9.09462e+30y][Rekey 0][Found 0]  ^C
 
 ./VanitySearch -t 0 -gpu -gpuId 0 -area 400000000000000000:7fffffffffffffffff -e -r 999999 1PWo3JeB9jrGw
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 10054102514374868992
 ❀  Search: 1Veryfierce [Compressed]
@@ -193,7 +193,7 @@ The keyhunt speed is 3M per second.
 
 
 ./VanitySearch -stop -t 4 -gpu -bits 38 -e -r 50000 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 1461501637330902918203684832716283019655932542976
 ❀  Search: 1HBtApAFA9B2YZw3G2YKSMCtb3dVnjuNe2 [Compressed]
@@ -213,7 +213,7 @@ The keyhunt speed is 3M per second.
 
 
 ./VanitySearch -t 0 -e -gpu -gpuId 0 -r 8891689 18891689
-❀  VanitySearch v2.0
+❀  VanitySearch v3.0
 ❀  Check: No -o output file. Will save 'Results.txt'
 ❀  Difficulty: 888446610539
 ❀  Search: 18891689 [Compressed]
@@ -286,7 +286,7 @@ Addr (BECH32): bc1qmqzldujhxc6pk677nk8v58hhec07fnl98695pu
 
 # Dependencies
 
-The v2.0 version does not require any dependencies and can be compiled directly.
+The v3.0 version does not require any dependencies and can be compiled directly.
 
 
 ----------------------------------------------------------------------------------------------------------------
