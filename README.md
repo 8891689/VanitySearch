@@ -403,3 +403,10 @@ ETH:  0xD6503e5994bF46052338a9286Bc43bC1c3811Fa1
 DOGE: DTszb9cPALbG9ESNJMFJt4ECqWGRCgucky
 TRX:  TAHUmjyzg7B3Nndv264zWYUhQ9HUmX4Xu4
  ``` 
+# ⚠️ Reminder:
+
+This tool is for learning and research purposes only. Do not use it for illegal activities!
+
+Decrypting someone else's private key is illegal and morally reprehensible. Please comply with local laws and regulations and use this tool only after understanding the associated risks.
+
+The developer is not responsible for any direct or indirect financial losses or legal liabilities resulting from the use of this tool.
